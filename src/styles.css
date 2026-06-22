@@ -1,0 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+@import "tailwindcss";
+@theme { --color-ink:#151412; --color-stone:#211f1b; --color-taupe:#8f8171; --color-taupe-light:#c7b9a8; --color-gold:#caa96a; --color-ivory:#f6f0e7; --font-sans:Inter,ui-sans-serif,system-ui; --font-serif:'Playfair Display',Georgia,serif; --shadow-lux:0 24px 80px rgba(0,0,0,.35); }
+*{scrollbar-width:none} body{margin:0;background:#151412;font-family:Inter,ui-sans-serif,system-ui;-webkit-font-smoothing:antialiased} input,button{font:inherit} button{cursor:pointer} .text-balance{text-wrap:balance}
