@@ -58,7 +58,15 @@ const buildRestaurantLink = (restaurantId: string) => {
     return `/?locale=${restaurantId}`;
   }
 
-  return `${window.location.origin}${window.location.pathname}?locale=${restaurantId}`;
+  return `${window.location.origin}/?locale=${restaurantId}`;
+};
+
+const buildAdminLink = (restaurantId: string) => {
+  if (typeof window === 'undefined') {
+    return `/admin?locale=${restaurantId}`;
+  }
+
+  return `${window.location.origin}/admin?locale=${restaurantId}`;
 };
 
 export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: AdminPanelProps) {
@@ -181,25 +189,25 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-ink/95 text-cream backdrop-blur-xl">
       <div className="mx-auto flex h-full max-w-6xl flex-col">
-        <header className="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-4 sm:px-6">
-          <div>
+        <header className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:gap-4 sm:px-6 sm:py-4 sm:pt-4">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase text-gold">{txt(language, 'admin')}</p>
-            <h2 className="font-display text-2xl">{restaurant.name}</h2>
-            <p className="mt-1 text-xs text-muted">
+            <h2 className="truncate font-display text-2xl">{restaurant.name}</h2>
+            <p className="mt-1 line-clamp-2 text-xs text-muted">
               {hasSupabaseConfig ? txt(language, 'supabaseReady') : txt(language, 'supabaseLocal')}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-white/10 bg-white/5 p-3 text-cream transition hover:bg-white/15"
+            className="shrink-0 rounded-full border border-white/10 bg-white/5 p-3 text-cream transition hover:bg-white/15"
             aria-label={txt(language, 'close')}
           >
             <X className="h-5 w-5" />
           </button>
         </header>
 
-        <nav className="flex gap-2 overflow-x-auto border-b border-white/10 px-4 py-3 sm:px-6">
+        <nav className="mobile-scrollbar flex gap-2 overflow-x-auto border-b border-white/10 px-3 py-3 sm:px-6">
           <TabButton active={tab === 'dishes'} onClick={() => setTab('dishes')} icon={<Utensils className="h-4 w-4" />}>
             {txt(language, 'dishes')}
           </TabButton>
@@ -211,10 +219,10 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
           </TabButton>
         </nav>
 
-        <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+        <main className="flex-1 overflow-y-auto px-3 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6 sm:py-5">
           {tab === 'dishes' ? (
             <section className="grid gap-5 lg:grid-cols-[1fr_1.1fr]">
-              <div className="rounded-3xl border border-white/10 bg-taupe/70 p-4">
+              <div className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-3 sm:rounded-3xl sm:p-4">
                 <div className="mb-4 flex items-center gap-2">
                   <Plus className="h-4 w-4 text-gold" />
                   <h3 className="font-display text-xl">{dishDraft.id ? dishDraft.name[language] : txt(language, 'addDish')}</h3>
@@ -282,7 +290,7 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
                       className="admin-input"
                       placeholder="https://..."
                     />
-                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-gold/40 bg-gold/10 px-4 py-3 text-sm font-semibold text-gold transition hover:bg-gold/15">
+                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-gold/40 bg-gold/10 px-4 py-3.5 text-sm font-semibold text-gold transition hover:bg-gold/15">
                       <Upload className="h-4 w-4" />
                       Carica foto dal dispositivo
                       <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
@@ -300,7 +308,7 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
                       className="h-5 w-5 accent-gold"
                     />
                   </label>
-                  <button type="button" onClick={saveDish} className="admin-primary-button">
+                  <button type="button" onClick={saveDish} className="admin-primary-button w-full justify-center sm:w-auto">
                     <Save className="h-4 w-4" />
                     {txt(language, 'save')}
                   </button>
@@ -311,12 +319,12 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
                 {restaurantDishes.map((dish) => {
                   const category = restaurantCategories.find((item) => item.id === dish.categoryId);
                   return (
-                    <div key={dish.id} className="rounded-3xl border border-white/10 bg-taupe/70 p-3">
+                    <div key={dish.id} className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-3 sm:rounded-3xl">
                       <div className="flex gap-3">
-                        <img src={dish.image} alt="" className="h-24 w-24 rounded-2xl object-cover" />
+                        <img src={dish.image} alt="" className="h-20 w-20 shrink-0 rounded-2xl object-cover sm:h-24 sm:w-24" />
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-semibold uppercase text-gold/80">{category?.name[language]}</p>
-                          <h4 className="truncate font-display text-xl">{dish.name[language]}</h4>
+                          <h4 className="line-clamp-2 font-display text-lg leading-tight sm:text-xl">{dish.name[language]}</h4>
                           <p className="mt-1 text-sm text-muted">€ {dish.price.toFixed(2)}</p>
                           <div className="mt-3 flex flex-wrap gap-2">
                             <button type="button" onClick={() => setDishDraft(dish)} className="admin-secondary-button">
@@ -338,7 +346,7 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
 
           {tab === 'categories' ? (
             <section className="grid gap-5 lg:grid-cols-[1fr_1.1fr]">
-              <div className="rounded-3xl border border-white/10 bg-taupe/70 p-4">
+              <div className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-3 sm:rounded-3xl sm:p-4">
                 <div className="mb-4 flex items-center gap-2">
                   <Plus className="h-4 w-4 text-gold" />
                   <h3 className="font-display text-xl">
@@ -369,7 +377,7 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
                       className="h-5 w-5 accent-gold"
                     />
                   </label>
-                  <button type="button" onClick={saveCategory} className="admin-primary-button">
+                  <button type="button" onClick={saveCategory} className="admin-primary-button w-full justify-center sm:w-auto">
                     <Save className="h-4 w-4" />
                     {txt(language, 'save')}
                   </button>
@@ -378,7 +386,7 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
 
               <div className="space-y-3">
                 {restaurantCategories.map((category) => (
-                  <div key={category.id} className="rounded-3xl border border-white/10 bg-taupe/70 p-4">
+                  <div key={category.id} className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-3 sm:rounded-3xl sm:p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-xs font-semibold uppercase text-gold/80">#{category.sortOrder}</p>
@@ -411,7 +419,7 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
               {state.restaurants.map((item) => {
                 const link = buildRestaurantLink(item.id);
                 return (
-                  <div key={item.id} className="rounded-3xl border border-white/10 bg-taupe/70 p-4">
+                  <div key={item.id} className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-3 sm:rounded-3xl sm:p-4">
                     <div className="mb-4 flex items-center justify-between gap-4">
                       <div>
                         <p className="text-xs font-semibold uppercase text-gold">QR</p>
@@ -428,6 +436,10 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
                       </a>
                     </div>
                     <QRCodeCanvas value={link} label={`QR ${item.name}`} />
+                    <div className="mt-4 rounded-2xl border border-white/10 bg-black/15 p-3">
+                      <p className="text-xs font-semibold uppercase text-gold">{txt(language, 'adminArea')}</p>
+                      <p className="mt-1 break-all text-xs leading-5 text-muted">{buildAdminLink(item.id)}</p>
+                    </div>
                   </div>
                 );
               })}
@@ -451,7 +463,7 @@ function TabButton({ active, onClick, icon, children }: TabButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+      className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
         active ? 'bg-gold text-ink shadow-gold' : 'bg-white/5 text-muted hover:bg-white/10 hover:text-cream'
       }`}
     >
@@ -472,7 +484,7 @@ function TranslatedInputs({ title, value, onChange, multiline = false }: Transla
   return (
     <fieldset className="space-y-2">
       <legend className="admin-label">{title}</legend>
-      <div className="grid gap-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         {LANGUAGES.map((language) => (
           <label key={language.code} className="grid gap-1">
             <span className="text-[0.68rem] font-semibold uppercase text-muted/70">{language.short}</span>

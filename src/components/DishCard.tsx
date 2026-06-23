@@ -23,7 +23,7 @@ export function DishCard({ dish, category, language }: DishCardProps) {
   }).format(dish.price);
 
   return (
-    <article className="group overflow-hidden rounded-[1.65rem] border border-white/10 bg-taupe shadow-glow transition duration-300 hover:-translate-y-1 hover:border-gold/50">
+    <article className="group overflow-hidden rounded-[1.35rem] border border-white/10 bg-taupe shadow-glow transition duration-300 hover:-translate-y-1 hover:border-gold/50 sm:rounded-[1.65rem]">
       <div className="relative aspect-[4/3] overflow-hidden bg-coal">
         <img
           src={dish.image}
@@ -33,23 +33,23 @@ export function DishCard({ dish, category, language }: DishCardProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/5 to-transparent" />
         {dish.featured ? (
-          <div className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full border border-gold/40 bg-black/40 px-3 py-1 text-xs font-semibold uppercase text-gold-soft backdrop-blur-md">
+          <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border border-gold/40 bg-black/40 px-2.5 py-1 text-[0.68rem] font-semibold uppercase text-gold-soft backdrop-blur-md sm:left-4 sm:top-4 sm:px-3 sm:text-xs">
             <Sparkles className="h-3.5 w-3.5" />
             {txt(language, 'featured')}
           </div>
         ) : null}
-        <div className="absolute bottom-4 right-4 inline-flex items-center gap-1 rounded-full bg-gold px-3 py-1.5 text-sm font-bold text-ink shadow-gold">
+        <div className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-gold px-3 py-1.5 text-sm font-bold text-ink shadow-gold sm:bottom-4 sm:right-4">
           <Euro className="h-4 w-4" />
           {formattedPrice.replace('€', '').trim()}
         </div>
       </div>
-      <div className="space-y-4 p-5">
+      <div className="space-y-3 p-4 sm:space-y-4 sm:p-5">
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-semibold uppercase text-gold/85">{category?.name[language]}</p>
           </div>
-          <h3 className="font-display text-2xl leading-tight text-cream">{dish.name[language]}</h3>
-          <p className="text-sm leading-6 text-muted">{dish.description[language]}</p>
+          <h3 className="font-display text-[1.55rem] leading-tight text-cream sm:text-2xl">{dish.name[language]}</h3>
+          <p className="text-sm leading-6 text-muted sm:text-[0.95rem]">{dish.description[language]}</p>
         </div>
         {dish.allergens.length > 0 ? (
           <div className="space-y-2">
@@ -58,7 +58,7 @@ export function DishCard({ dish, category, language }: DishCardProps) {
               {dish.allergens.map((allergen) => (
                 <span
                   key={allergen}
-                  className="rounded-full border border-white/10 bg-white/[0.045] px-3 py-1 text-xs text-muted"
+                  className="rounded-full border border-white/10 bg-white/[0.045] px-2.5 py-1 text-[0.72rem] text-muted sm:px-3 sm:text-xs"
                 >
                   {allergenText(allergen, language)}
                 </span>

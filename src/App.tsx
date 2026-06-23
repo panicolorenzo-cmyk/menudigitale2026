@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Lock, Search, Settings, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Lock, Search, ShieldCheck } from 'lucide-react';
 import { AdminPanel } from './components/AdminPanel';
 import { DishCard } from './components/DishCard';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
@@ -28,9 +28,21 @@ const resolveInitialRestaurant = (state: MenuState): RestaurantId | null => {
   }
 
   const params = new URLSearchParams(window.location.search);
-  const requested = params.get('locale') || params.get('restaurant') || window.location.hash.replace('#', '');
+  const adminPathRestaurant = window.location.pathname.startsWith('/admin/')
+    ? window.location.pathname.split('/').filter(Boolean)[1]
+    : null;
+  const requested = params.get('locale') || params.get('restaurant') || adminPathRestaurant || window.location.hash.replace('#', '');
   const matched = state.restaurants.find((restaurant) => restaurant.id === requested || restaurant.slug === requested);
   return matched?.id ?? null;
+};
+
+const isAdminRoute = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  return window.location.pathname.startsWith('/admin') || params.get('admin') === '1';
 };
 
 const updateUrlRestaurant = (restaurantId: RestaurantId | null) => {
@@ -53,6 +65,7 @@ export default function App() {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<RestaurantId | null>(() =>
     resolveInitialRestaurant(loadLocalMenu())
   );
+  const [adminMode, setAdminMode] = useState(() => isAdminRoute());
   const [adminOpen, setAdminOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const [adminUnlocked, setAdminUnlocked] = useState(() => {
@@ -98,6 +111,18 @@ export default function App() {
     [menuState.restaurants, selectedRestaurantId]
   );
 
+  useEffect(() => {
+    if (!adminMode || !restaurant || adminOpen || pinOpen) {
+      return;
+    }
+
+    if (adminUnlocked) {
+      setAdminOpen(true);
+    } else {
+      setPinOpen(true);
+    }
+  }, [adminMode, adminOpen, adminUnlocked, pinOpen, restaurant]);
+
   const updateMenuState = (nextState: MenuState) => {
     setMenuState({ ...nextState, updatedAt: new Date().toISOString() });
   };
@@ -120,15 +145,58 @@ export default function App() {
     setAdminOpen(true);
   };
 
+  const exitAdminRoute = () => {
+    setAdminOpen(false);
+    setPinOpen(false);
+    setAdminMode(false);
+
+    if (typeof window !== 'undefined') {
+      const suffix = selectedRestaurantId ? `?locale=${selectedRestaurantId}` : '';
+      window.history.replaceState({}, '', `/${suffix}`);
+    }
+  };
+
   if (!restaurant) {
     return (
       <>
         <Landing
           restaurants={menuState.restaurants}
           language={language}
+          adminMode={adminMode}
           onLanguageChange={setLanguage}
           onSelectRestaurant={setSelectedRestaurantId}
         />
+      </>
+    );
+  }
+
+  if (adminMode) {
+    return (
+      <>
+        <AdminGateway
+          restaurant={restaurant}
+          language={language}
+          onChangeRestaurant={() => setSelectedRestaurantId(null)}
+          onOpenAdmin={requestAdmin}
+        />
+
+        {pinOpen ? (
+          <PinModal
+            language={language}
+            onClose={exitAdminRoute}
+            onUnlock={unlockAdmin}
+          />
+        ) : null}
+
+        {adminOpen ? (
+          <AdminPanel
+            state={menuState}
+            restaurant={restaurant}
+            language={language}
+            onClose={exitAdminRoute}
+            onUpdate={updateMenuState}
+          />
+        ) : null}
       </>
     );
   }
@@ -141,7 +209,6 @@ export default function App() {
         language={language}
         onLanguageChange={setLanguage}
         onChangeRestaurant={() => setSelectedRestaurantId(null)}
-        onAdmin={requestAdmin}
       />
 
       {pinOpen ? (
@@ -168,45 +235,52 @@ export default function App() {
 interface LandingProps {
   restaurants: Restaurant[];
   language: LanguageCode;
+  adminMode?: boolean;
   onLanguageChange: (language: LanguageCode) => void;
   onSelectRestaurant: (restaurantId: RestaurantId) => void;
 }
 
-function Landing({ restaurants, language, onLanguageChange, onSelectRestaurant }: LandingProps) {
+function Landing({ restaurants, language, adminMode = false, onLanguageChange, onSelectRestaurant }: LandingProps) {
   const hero = restaurants[0];
 
   return (
     <main className="relative min-h-[100svh] overflow-hidden bg-ink text-cream">
       <img src={hero?.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-ink/45 to-ink" />
-      <div className="absolute inset-x-0 top-0 z-10 flex justify-center px-4 pt-5 sm:justify-end sm:px-8">
+      <div className="absolute inset-x-0 top-0 z-10 flex justify-center px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:justify-end sm:px-8 sm:pt-5">
         <LanguageSwitcher value={language} onChange={onLanguageChange} compact />
       </div>
 
-      <section className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-6xl flex-col justify-end px-4 pb-8 pt-28 sm:px-8">
+      <section className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-6xl flex-col justify-end px-3 pb-5 pt-24 sm:px-8 sm:pb-8 sm:pt-28">
         <div className="max-w-3xl animate-fadeUp">
-          <p className="mb-3 text-xs font-semibold uppercase text-gold-soft">Menu Digitale 2026</p>
-          <h1 className="font-display text-5xl leading-none text-cream sm:text-7xl">Locanda 22 & Adelardi</h1>
-          <p className="mt-5 max-w-xl text-base leading-7 text-cream/80 sm:text-lg">
-            {txt(language, 'chooseVenue')}
+          <p className="mb-3 text-xs font-semibold uppercase text-gold-soft">
+            {adminMode ? txt(language, 'adminArea') : 'Menu Digitale 2026'}
+          </p>
+          <h1 className="font-display text-[clamp(2.7rem,13vw,5rem)] leading-[0.92] text-cream sm:text-7xl">
+            {adminMode ? txt(language, 'admin') : 'Locanda 22 & Adelardi'}
+          </h1>
+          <p className="mt-4 max-w-xl text-base leading-7 text-cream/80 sm:mt-5 sm:text-lg">
+            {adminMode ? txt(language, 'chooseAdminVenue') : txt(language, 'chooseVenue')}
           </p>
         </div>
 
-        <div className="mt-8 grid gap-3 pb-[env(safe-area-inset-bottom)] md:grid-cols-2">
+        <div className="mt-5 grid gap-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] sm:mt-8 md:grid-cols-2">
           {restaurants.map((restaurant, index) => (
             <button
               key={restaurant.id}
               type="button"
               onClick={() => onSelectRestaurant(restaurant.id)}
-              className="group relative min-h-48 overflow-hidden rounded-[1.75rem] border border-white/15 bg-taupe text-left shadow-glow transition duration-300 hover:-translate-y-1 hover:border-gold/60"
+              className="group relative min-h-[9.25rem] overflow-hidden rounded-[1.35rem] border border-white/15 bg-taupe text-left shadow-glow transition duration-300 hover:-translate-y-1 hover:border-gold/60 sm:min-h-48 sm:rounded-[1.75rem]"
               style={{ animationDelay: `${index * 90}ms` }}
             >
               <img src={restaurant.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-              <div className="relative flex h-full min-h-48 flex-col justify-end p-5">
-                <p className="text-xs font-semibold uppercase text-gold-soft">{txt(language, 'openMenu')}</p>
-                <h2 className="mt-1 font-display text-4xl">{restaurant.name}</h2>
-                <p className="mt-3 max-w-md text-sm leading-6 text-cream/75">{restaurant.subtitle[language]}</p>
+              <div className="relative flex h-full min-h-[9.25rem] flex-col justify-end p-4 sm:min-h-48 sm:p-5">
+                <p className="text-xs font-semibold uppercase text-gold-soft">
+                  {adminMode ? txt(language, 'manageMenu') : txt(language, 'openMenu')}
+                </p>
+                <h2 className="mt-1 font-display text-3xl sm:text-4xl">{restaurant.name}</h2>
+                <p className="mt-2 max-w-md text-sm leading-5 text-cream/75 sm:mt-3 sm:leading-6">{restaurant.subtitle[language]}</p>
               </div>
             </button>
           ))}
@@ -222,10 +296,9 @@ interface MenuExperienceProps {
   language: LanguageCode;
   onLanguageChange: (language: LanguageCode) => void;
   onChangeRestaurant: () => void;
-  onAdmin: () => void;
 }
 
-function MenuExperience({ state, restaurant, language, onLanguageChange, onChangeRestaurant, onAdmin }: MenuExperienceProps) {
+function MenuExperience({ state, restaurant, language, onLanguageChange, onChangeRestaurant }: MenuExperienceProps) {
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -292,15 +365,15 @@ function MenuExperience({ state, restaurant, language, onLanguageChange, onChang
 
   return (
     <main className="min-h-screen bg-coal text-cream">
-      <section className="relative flex min-h-[96svh] overflow-hidden">
+      <section className="relative flex min-h-[78svh] overflow-hidden sm:min-h-[96svh]">
         <img src={restaurant.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-ink/40 to-coal" />
 
-        <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 px-4 pt-5 sm:px-8">
+        <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:gap-3 sm:px-8 sm:pt-5">
           <button
             type="button"
             onClick={onChangeRestaurant}
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-4 py-3 text-xs font-semibold uppercase text-cream backdrop-blur-md transition hover:bg-white/10"
+            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full border border-white/15 bg-black/25 px-4 text-xs font-semibold uppercase text-cream backdrop-blur-md transition hover:bg-white/10"
           >
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">{txt(language, 'changeVenue')}</span>
@@ -308,43 +381,37 @@ function MenuExperience({ state, restaurant, language, onLanguageChange, onChang
           <LanguageSwitcher value={language} onChange={onLanguageChange} compact />
         </div>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col justify-end px-4 pb-10 pt-28 sm:px-8">
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col justify-end px-3 pb-7 pt-24 sm:px-8 sm:pb-10 sm:pt-28">
           <div className="max-w-3xl animate-fadeUp">
             <p className="mb-3 text-xs font-semibold uppercase text-gold-soft">Menu Digitale 2026</p>
-            <h1 className="font-display text-6xl leading-none sm:text-8xl">{restaurant.name}</h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-cream/80 sm:text-xl">{restaurant.subtitle[language]}</p>
-            <p className="mt-4 text-sm text-cream/60">{restaurant.address}</p>
+            <h1 className="font-display text-[clamp(3.2rem,18vw,6rem)] leading-[0.9] sm:text-8xl">{restaurant.name}</h1>
+            <p className="mt-4 max-w-2xl text-[0.95rem] leading-6 text-cream/80 sm:mt-5 sm:text-xl sm:leading-8">
+              {restaurant.subtitle[language]}
+            </p>
+            <p className="mt-3 text-sm leading-5 text-cream/60 sm:mt-4">{restaurant.address}</p>
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-3 pb-[env(safe-area-inset-bottom)]">
-            <a href="#menu" className="rounded-full bg-gold px-6 py-3 text-sm font-bold uppercase text-ink shadow-gold transition hover:bg-gold-soft">
+          <div className="mt-6 flex flex-wrap gap-3 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] sm:mt-8">
+            <a href="#menu" className="rounded-full bg-gold px-6 py-3.5 text-sm font-bold uppercase text-ink shadow-gold transition hover:bg-gold-soft">
               {txt(language, 'menu')}
             </a>
-            <button
-              type="button"
-              onClick={onAdmin}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-5 py-3 text-sm font-semibold uppercase text-cream backdrop-blur-md transition hover:bg-white/10"
-            >
-              <Settings className="h-4 w-4" />
-              {txt(language, 'admin')}
-            </button>
           </div>
         </div>
       </section>
 
-      <section id="menu" className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 sm:py-10">
-        <div className="sticky top-0 z-30 -mx-4 border-y border-white/10 bg-coal/92 px-4 py-4 backdrop-blur-xl sm:-mx-8 sm:px-8">
+      <section id="menu" className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-8 sm:py-10">
+        <div className="sticky top-0 z-30 -mx-3 border-y border-white/10 bg-coal/95 px-3 py-3 backdrop-blur-xl sm:-mx-8 sm:px-8 sm:py-4">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gold" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-gold sm:h-5 sm:w-5" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="w-full rounded-full border border-white/10 bg-taupe px-12 py-4 text-base text-cream outline-none transition placeholder:text-muted/60 focus:border-gold/70"
+              className="w-full rounded-full border border-white/10 bg-taupe px-11 py-3.5 text-[0.95rem] text-cream outline-none transition placeholder:text-muted/60 focus:border-gold/70 sm:px-12 sm:py-4 sm:text-base"
               placeholder={txt(language, 'search')}
             />
           </div>
 
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+          <div className="mobile-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1 sm:mt-4">
             <button
               type="button"
               onClick={() => setSelectedCategory('all')}
@@ -366,7 +433,7 @@ function MenuExperience({ state, restaurant, language, onLanguageChange, onChang
         </div>
 
         {visibleDishes.length > 0 ? (
-          <div className="grid gap-5 py-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 py-4 sm:grid-cols-2 sm:gap-5 sm:py-6 lg:grid-cols-3">
             {visibleDishes.map((dish) => (
               <DishCard key={dish.id} dish={dish} category={categoryById.get(dish.categoryId)} language={language} />
             ))}
@@ -376,6 +443,47 @@ function MenuExperience({ state, restaurant, language, onLanguageChange, onChang
             <p className="font-display text-2xl">{txt(language, 'noResults')}</p>
           </div>
         )}
+      </section>
+    </main>
+  );
+}
+
+interface AdminGatewayProps {
+  restaurant: Restaurant;
+  language: LanguageCode;
+  onChangeRestaurant: () => void;
+  onOpenAdmin: () => void;
+}
+
+function AdminGateway({ restaurant, language, onChangeRestaurant, onOpenAdmin }: AdminGatewayProps) {
+  return (
+    <main className="relative min-h-[100svh] overflow-hidden bg-ink text-cream">
+      <img src={restaurant.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-ink/55 to-coal" />
+      <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:px-8 sm:pt-5">
+        <button
+          type="button"
+          onClick={onChangeRestaurant}
+          className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full border border-white/15 bg-black/25 px-4 text-xs font-semibold uppercase text-cream backdrop-blur-md transition hover:bg-white/10"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="hidden sm:inline">{txt(language, 'changeVenue')}</span>
+        </button>
+      </div>
+
+      <section className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-4xl flex-col justify-end px-3 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-24 sm:px-8">
+        <div className="rounded-[1.5rem] border border-white/10 bg-black/35 p-5 shadow-glow backdrop-blur-md sm:p-7">
+          <p className="mb-3 text-xs font-semibold uppercase text-gold-soft">{txt(language, 'adminArea')}</p>
+          <h1 className="font-display text-[clamp(3rem,16vw,6rem)] leading-[0.9]">{restaurant.name}</h1>
+          <p className="mt-4 text-sm leading-6 text-cream/75 sm:text-base">{txt(language, 'adminSeparateLink')}</p>
+          <button
+            type="button"
+            onClick={onOpenAdmin}
+            className="mt-6 w-full rounded-full bg-gold px-6 py-3.5 text-sm font-bold uppercase text-ink shadow-gold transition hover:bg-gold-soft sm:w-auto"
+          >
+            {txt(language, 'manageMenu')}
+          </button>
+        </div>
       </section>
     </main>
   );

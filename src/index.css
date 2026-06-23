@@ -20,6 +20,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 15% 0%, rgba(197, 164, 106, 0.08), transparent 32rem),
     linear-gradient(180deg, #171410 0%, #12100d 100%);
@@ -36,6 +37,10 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+img {
+  max-width: 100%;
+}
+
 ::selection {
   background: rgba(197, 164, 106, 0.45);
   color: #f7efe4;
@@ -43,7 +48,7 @@ button {
 
 @layer components {
   .category-chip {
-    @apply shrink-0 rounded-full border border-white/10 bg-white/[0.055] px-4 py-2 text-sm font-semibold text-muted transition hover:border-gold/50 hover:text-cream;
+    @apply shrink-0 rounded-full border border-white/10 bg-white/[0.055] px-4 py-2.5 text-sm font-semibold text-muted transition hover:border-gold/50 hover:text-cream;
   }
 
   .category-chip-active {
@@ -55,14 +60,23 @@ button {
   }
 
   .admin-input {
-    @apply w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-cream outline-none transition placeholder:text-muted/45 focus:border-gold/70 focus:bg-black/35;
+    @apply w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3.5 text-base text-cream outline-none transition placeholder:text-muted/45 focus:border-gold/70 focus:bg-black/35 sm:py-3 sm:text-sm;
   }
 
   .admin-primary-button {
-    @apply inline-flex items-center gap-2 rounded-full bg-gold px-5 py-3 text-sm font-bold uppercase text-ink shadow-gold transition hover:bg-gold-soft;
+    @apply inline-flex items-center gap-2 rounded-full bg-gold px-5 py-3.5 text-sm font-bold uppercase text-ink shadow-gold transition hover:bg-gold-soft sm:py-3;
   }
 
   .admin-secondary-button {
-    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.055] px-4 py-2 text-sm font-semibold text-muted transition hover:border-gold/40 hover:text-cream;
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.055] px-4 py-2.5 text-sm font-semibold text-muted transition hover:border-gold/40 hover:text-cream;
+  }
+
+  .mobile-scrollbar {
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }
