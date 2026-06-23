@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #f7efe4;
+  background: #171410;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: #171410;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(197, 164, 106, 0.08), transparent 32rem),
+    linear-gradient(180deg, #171410 0%, #12100d 100%);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(197, 164, 106, 0.45);
+  color: #f7efe4;
+}
+
+@layer components {
+  .category-chip {
+    @apply shrink-0 rounded-full border border-white/10 bg-white/[0.055] px-4 py-2 text-sm font-semibold text-muted transition hover:border-gold/50 hover:text-cream;
+  }
+
+  .category-chip-active {
+    @apply border-gold bg-gold text-ink shadow-gold hover:text-ink;
+  }
+
+  .admin-label {
+    @apply text-xs font-semibold uppercase text-gold/90;
+  }
+
+  .admin-input {
+    @apply w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-cream outline-none transition placeholder:text-muted/45 focus:border-gold/70 focus:bg-black/35;
+  }
+
+  .admin-primary-button {
+    @apply inline-flex items-center gap-2 rounded-full bg-gold px-5 py-3 text-sm font-bold uppercase text-ink shadow-gold transition hover:bg-gold-soft;
+  }
+
+  .admin-secondary-button {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.055] px-4 py-2 text-sm font-semibold text-muted transition hover:border-gold/40 hover:text-cream;
+  }
+}

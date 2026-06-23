@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Menu Digitale 2026">
+  <rect width="512" height="512" rx="112" fill="#171410"/>
+  <circle cx="256" cy="256" r="188" fill="none" stroke="#c5a46a" stroke-width="12"/>
+  <path d="M152 334V174h34v130h72v30H152Zm141 0V174h48c25 0 46 7 62 22 16 15 24 34 24 58s-8 44-24 59c-16 14-37 21-62 21h-48Zm34-30h13c16 0 28-4 38-13 10-9 15-21 15-37 0-15-5-27-15-36-10-9-22-14-38-14h-13v100Z" fill="#f7efe4"/>
+  <path d="M166 383h180" stroke="#ead09a" stroke-width="10" stroke-linecap="round"/>
+</svg>
