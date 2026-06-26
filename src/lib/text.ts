@@ -45,7 +45,11 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     name: 'Nome',
     supabaseLocal: 'Dati locali demo attivi. Supabase non configurato.',
     supabaseReady: 'Supabase attivo. I dati vengono salvati online.',
-    openMenu: 'Apri menu'
+    openMenu: 'Apri menu',
+    email: 'Email',
+    password: 'Password',
+    loginTitle: 'Accesso admin',
+    logout: 'Disconnetti'
   },
   en: {
     chooseExperience: 'Choose your experience',
@@ -91,7 +95,11 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     name: 'Name',
     supabaseLocal: 'Local demo data active. Supabase is not configured.',
     supabaseReady: 'Supabase active. Data is saved online.',
-    openMenu: 'Open menu'
+    openMenu: 'Open menu',
+    email: 'Email',
+    password: 'Password',
+    loginTitle: 'Admin login',
+    logout: 'Sign out'
   },
   fr: {
     chooseExperience: 'Choisissez votre experience',
@@ -137,7 +145,11 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     name: 'Nom',
     supabaseLocal: 'Données locales de démo actives. Supabase non configuré.',
     supabaseReady: 'Supabase actif. Les données sont enregistrées en ligne.',
-    openMenu: 'Ouvrir le menu'
+    openMenu: 'Ouvrir le menu',
+    email: 'Email',
+    password: 'Mot de passe',
+    loginTitle: 'Connexion admin',
+    logout: 'Déconnexion'
   },
   de: {
     chooseExperience: 'Waehle dein Erlebnis',
@@ -183,7 +195,11 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     name: 'Name',
     supabaseLocal: 'Lokale Demodaten aktiv. Supabase ist nicht konfiguriert.',
     supabaseReady: 'Supabase aktiv. Die Daten werden online gespeichert.',
-    openMenu: 'Menü öffnen'
+    openMenu: 'Menü öffnen',
+    email: 'E-Mail',
+    password: 'Passwort',
+    loginTitle: 'Admin-Anmeldung',
+    logout: 'Abmelden'
   },
   es: {
     chooseExperience: 'Elige tu experiencia',
@@ -229,7 +245,11 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     name: 'Nombre',
     supabaseLocal: 'Datos demo locales activos. Supabase no configurado.',
     supabaseReady: 'Supabase activo. Los datos se guardan en línea.',
-    openMenu: 'Abrir menú'
+    openMenu: 'Abrir menú',
+    email: 'Email',
+    password: 'Contraseña',
+    loginTitle: 'Acceso admin',
+    logout: 'Cerrar sesión'
   },
   ru: {
     chooseExperience: 'Выберите свой формат',
@@ -275,7 +295,11 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     name: 'Название',
     supabaseLocal: 'Активны локальные демоданные. Supabase не настроен.',
     supabaseReady: 'Supabase активен. Данные сохраняются онлайн.',
-    openMenu: 'Открыть меню'
+    openMenu: 'Открыть меню',
+    email: 'Email',
+    password: 'Пароль',
+    loginTitle: 'Вход для администратора',
+    logout: 'Выйти'
   }
 };
 

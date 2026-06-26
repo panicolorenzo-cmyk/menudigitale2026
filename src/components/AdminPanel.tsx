@@ -2,6 +2,7 @@ import { ChangeEvent, useEffect, useMemo, useState, type ReactNode } from 'react
 import {
   ExternalLink,
   Image as ImageIcon,
+  LogOut,
   Plus,
   Power,
   QrCode,
@@ -11,7 +12,7 @@ import {
   Utensils,
   X
 } from 'lucide-react';
-import { hasSupabaseConfig } from '../lib/supabase';
+import { hasSupabaseConfig, uploadMenuImage } from '../lib/supabase';
 import { txt } from '../lib/text';
 import { LANGUAGES, type Category, type Dish, type LanguageCode, type MenuState, type Restaurant, type TranslatedText } from '../types';
 import { QRCodeCanvas } from './QRCodeCanvas';
@@ -24,6 +25,7 @@ interface AdminPanelProps {
   language: LanguageCode;
   onClose: () => void;
   onUpdate: (state: MenuState | ((currentState: MenuState) => MenuState)) => void;
+  onSignOut?: () => void;
 }
 
 const DEFAULT_DISH_IMAGE = 'https://images.unsplash.com/photo-1543352634-a1c51d9f1fa7?auto=format&fit=crop&w=1100&q=84';
@@ -69,7 +71,7 @@ const buildAdminLink = (restaurantId: string) => {
   return `${window.location.origin}/admin?locale=${restaurantId}`;
 };
 
-export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: AdminPanelProps) {
+export function AdminPanel({ state, restaurant, language, onClose, onUpdate, onSignOut }: AdminPanelProps) {
   const [tab, setTab] = useState<AdminTab>('dishes');
 
   const restaurantCategories = useMemo(
@@ -218,6 +220,22 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
       return;
     }
 
+    if (hasSupabaseConfig) {
+      void uploadMenuImage(file).then((url) => {
+        if (url) {
+          setDishDraft((current) => ({ ...current, image: url }));
+          return;
+        }
+        // fallback to base64 if upload failed
+        readAsDataUrl(file);
+      });
+      return;
+    }
+
+    readAsDataUrl(file);
+  };
+
+  const readAsDataUrl = (file: File) => {
     const reader = new FileReader();
     reader.onload = () => {
       setDishDraft((current) => ({ ...current, image: String(reader.result) }));
@@ -236,14 +254,27 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
               {hasSupabaseConfig ? txt(language, 'supabaseReady') : txt(language, 'supabaseLocal')}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="shrink-0 rounded-full border border-white/10 bg-white/5 p-3 text-cream transition hover:bg-white/15"
-            aria-label={txt(language, 'close')}
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {hasSupabaseConfig && onSignOut ? (
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="rounded-full border border-white/10 bg-white/5 p-3 text-muted transition hover:bg-white/15 hover:text-cream"
+                aria-label={txt(language, 'logout')}
+                title={txt(language, 'logout')}
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-white/10 bg-white/5 p-3 text-cream transition hover:bg-white/15"
+              aria-label={txt(language, 'close')}
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </header>
 
         <nav className="mobile-scrollbar flex gap-2 overflow-x-auto border-b border-white/10 px-3 py-3 sm:px-6">

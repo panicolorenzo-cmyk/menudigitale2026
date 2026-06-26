@@ -5,7 +5,7 @@ import { DishCard } from './components/DishCard';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import locanda22IntroLogoSvg from './generated/locanda22IntroLogo.svg?raw';
 import { loadLocalMenu } from './lib/localMenu';
-import { loadMenuSnapshot, saveMenuSnapshot } from './lib/supabase';
+import { getAdminSession, hasSupabaseConfig, loadMenuSnapshot, saveMenuSnapshot, signInAdmin, signOutAdmin } from './lib/supabase';
 import { txt } from './lib/text';
 import { LANGUAGES, type Category, type Dish, type LanguageCode, type MenuState, type Restaurant, type RestaurantId } from './types';
 
@@ -70,6 +70,7 @@ export default function App() {
   const [adminMode, setAdminMode] = useState(() => isAdminRoute());
   const [adminOpen, setAdminOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
+  const [supabaseAuthOpen, setSupabaseAuthOpen] = useState(false);
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
   const [adminUnlocked, setAdminUnlocked] = useState(() => {
     if (typeof window === 'undefined') {
@@ -124,16 +125,26 @@ export default function App() {
   );
 
   useEffect(() => {
-    if (!adminMode || !restaurant || adminOpen || pinOpen) {
+    if (!adminMode || !restaurant || adminOpen || pinOpen || supabaseAuthOpen) {
       return;
     }
 
     if (adminUnlocked) {
-      setAdminOpen(true);
+      if (hasSupabaseConfig) {
+        void getAdminSession().then((hasSession) => {
+          if (hasSession) {
+            setAdminOpen(true);
+          } else {
+            setSupabaseAuthOpen(true);
+          }
+        });
+      } else {
+        setAdminOpen(true);
+      }
     } else {
       setPinOpen(true);
     }
-  }, [adminMode, adminOpen, adminUnlocked, pinOpen, restaurant]);
+  }, [adminMode, adminOpen, adminUnlocked, pinOpen, supabaseAuthOpen, restaurant]);
 
   const updateMenuState = (nextState: MenuState | ((currentState: MenuState) => MenuState)) => {
     setMenuState((currentState) => {
@@ -144,7 +155,17 @@ export default function App() {
 
   const requestAdmin = () => {
     if (adminUnlocked) {
-      setAdminOpen(true);
+      if (hasSupabaseConfig) {
+        void getAdminSession().then((hasSession) => {
+          if (hasSession) {
+            setAdminOpen(true);
+          } else {
+            setSupabaseAuthOpen(true);
+          }
+        });
+      } else {
+        setAdminOpen(true);
+      }
       return;
     }
 
@@ -157,12 +178,38 @@ export default function App() {
       window.sessionStorage.setItem('menu-digitale-2026-admin', 'unlocked');
     }
     setPinOpen(false);
+
+    if (hasSupabaseConfig) {
+      void getAdminSession().then((hasSession) => {
+        if (hasSession) {
+          setAdminOpen(true);
+        } else {
+          setSupabaseAuthOpen(true);
+        }
+      });
+    } else {
+      setAdminOpen(true);
+    }
+  };
+
+  const handleSupabaseAuth = () => {
+    setSupabaseAuthOpen(false);
     setAdminOpen(true);
+  };
+
+  const handleSignOut = () => {
+    void signOutAdmin();
+    setAdminUnlocked(false);
+    setAdminOpen(false);
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem('menu-digitale-2026-admin');
+    }
   };
 
   const exitAdminRoute = () => {
     setAdminOpen(false);
     setPinOpen(false);
+    setSupabaseAuthOpen(false);
     setAdminMode(false);
 
     if (typeof window !== 'undefined') {
@@ -201,6 +248,14 @@ export default function App() {
           />
         ) : null}
 
+        {supabaseAuthOpen ? (
+          <SupabaseAuthModal
+            language={language}
+            onClose={exitAdminRoute}
+            onAuth={handleSupabaseAuth}
+          />
+        ) : null}
+
         {adminOpen ? (
           <AdminPanel
             state={menuState}
@@ -208,6 +263,7 @@ export default function App() {
             language={language}
             onClose={exitAdminRoute}
             onUpdate={updateMenuState}
+            onSignOut={handleSignOut}
           />
         ) : null}
       </>
@@ -232,6 +288,14 @@ export default function App() {
         />
       ) : null}
 
+      {supabaseAuthOpen ? (
+        <SupabaseAuthModal
+          language={language}
+          onClose={() => setSupabaseAuthOpen(false)}
+          onAuth={handleSupabaseAuth}
+        />
+      ) : null}
+
       {adminOpen ? (
         <AdminPanel
           state={menuState}
@@ -239,6 +303,7 @@ export default function App() {
           language={language}
           onClose={() => setAdminOpen(false)}
           onUpdate={updateMenuState}
+          onSignOut={handleSignOut}
         />
       ) : null}
     </>
@@ -815,6 +880,83 @@ interface PinModalProps {
   language: LanguageCode;
   onClose: () => void;
   onUnlock: () => void;
+}
+
+interface SupabaseAuthModalProps {
+  language: LanguageCode;
+  onClose: () => void;
+  onAuth: () => void;
+}
+
+function SupabaseAuthModal({ language, onClose, onAuth }: SupabaseAuthModalProps) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+    void signInAdmin(email, password).then(({ error: authError }) => {
+      setLoading(false);
+      if (authError) {
+        setError(authError);
+        return;
+      }
+      onAuth();
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-40 grid place-items-center bg-black/75 px-4 text-cream backdrop-blur-md">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-[1.75rem] border border-white/10 bg-taupe p-5 shadow-glow">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="rounded-full bg-gold/15 p-3 text-gold">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase text-gold">{txt(language, 'admin')}</p>
+            <h2 className="font-display text-2xl">{txt(language, 'loginTitle')}</h2>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <label className="space-y-2">
+            <span className="admin-label">{txt(language, 'email')}</span>
+            <input
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              type="email"
+              autoFocus
+              required
+              className="admin-input"
+              placeholder="admin@example.com"
+            />
+          </label>
+          <label className="space-y-2">
+            <span className="admin-label">{txt(language, 'password')}</span>
+            <input
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              type="password"
+              required
+              className="admin-input"
+            />
+          </label>
+        </div>
+        {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
+        <div className="mt-5 flex gap-2">
+          <button type="button" onClick={onClose} className="admin-secondary-button flex-1 justify-center">
+            {txt(language, 'close')}
+          </button>
+          <button type="submit" disabled={loading} className="admin-primary-button flex-1 justify-center">
+            <ShieldCheck className="h-4 w-4" />
+            {loading ? '...' : txt(language, 'unlock')}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
 }
 
 function PinModal({ language, onClose, onUnlock }: PinModalProps) {

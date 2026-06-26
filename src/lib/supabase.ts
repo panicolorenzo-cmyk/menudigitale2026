@@ -16,9 +16,9 @@ const createSupabaseClient = (): SupabaseClient | null => {
 
   return createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-      autoRefreshToken: false,
+      autoRefreshToken: true,
       detectSessionInUrl: false,
-      persistSession: false
+      persistSession: true
     }
   });
 };
@@ -26,8 +26,44 @@ const createSupabaseClient = (): SupabaseClient | null => {
 export const supabase: SupabaseClient | null = createSupabaseClient();
 
 const SNAPSHOT_ID = 'main';
+const IMAGE_BUCKET = 'menu-images';
 let queuedSnapshot: MenuState | null = null;
 let saveInProgress = false;
+
+export const signInAdmin = async (email: string, password: string): Promise<{ error: string | null }> => {
+  if (!supabase) {
+    return { error: 'Supabase non configurato.' };
+  }
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  return { error: error ? error.message : null };
+};
+
+export const signOutAdmin = async (): Promise<void> => {
+  if (!supabase) return;
+  await supabase.auth.signOut();
+};
+
+export const getAdminSession = async (): Promise<boolean> => {
+  if (!supabase) return false;
+  const { data } = await supabase.auth.getSession();
+  return Boolean(data.session);
+};
+
+export const uploadMenuImage = async (file: File): Promise<string | null> => {
+  if (!supabase) return null;
+  const ext = file.name.split('.').pop() ?? 'jpg';
+  const path = `dishes/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await supabase.storage.from(IMAGE_BUCKET).upload(path, file, {
+    cacheControl: '31536000',
+    upsert: false
+  });
+  if (error) {
+    console.warn('Image upload failed:', error.message);
+    return null;
+  }
+  const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+};
 
 const persistMenuSnapshot = async (state: MenuState): Promise<void> => {
   if (!supabase) {
