@@ -577,34 +577,34 @@ function MenuExperience({ state, restaurant, service, language, onLanguageChange
     [restaurantCategories]
   );
 
-  const activeCategories = useMemo(
-    () => restaurantCategories.filter((category) => category.active),
-    [restaurantCategories]
+  const categoriesWithDishes = useMemo(
+    () => restaurantCategories.filter((category) => category.active && dishes.some((dish) => dish.categoryId === category.id)),
+    [dishes, restaurantCategories]
   );
 
   const dishSections = useMemo(
     () =>
-      activeCategories.map((category) => ({
+      categoriesWithDishes.map((category) => ({
         category,
         dishes: dishes.filter((dish) => dish.categoryId === category.id)
       })),
-    [activeCategories, dishes]
+    [categoriesWithDishes, dishes]
   );
 
   const isAperitivoEmpty = isLocanda22 && service === 'aperitivo' && dishSections.length === 0;
 
   useEffect(() => {
-    if (activeCategories.length === 0) {
+    if (categoriesWithDishes.length === 0) {
       if (selectedCategory !== '') {
         setSelectedCategory('');
       }
       return;
     }
 
-    if (!activeCategories.some((category) => category.id === selectedCategory)) {
-      setSelectedCategory(activeCategories[0].id);
+    if (!categoriesWithDishes.some((category) => category.id === selectedCategory)) {
+      setSelectedCategory(categoriesWithDishes[0].id);
     }
-  }, [activeCategories, selectedCategory]);
+  }, [categoriesWithDishes, selectedCategory]);
 
   const alignCategoryToLeft = useCallback((categoryId: string, behavior: ScrollBehavior = 'smooth') => {
     if (typeof window === 'undefined') {
@@ -842,7 +842,7 @@ function MenuExperience({ state, restaurant, service, language, onLanguageChange
               className="fixed inset-x-0 bottom-0 z-40 border-t border-white/8 bg-black px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-[0_-20px_45px_rgba(0,0,0,0.58)] sm:sticky sm:top-0 sm:bottom-auto sm:z-30 sm:-mx-8 sm:border-y sm:border-white/10 sm:bg-coal/95 sm:px-8 sm:py-4 sm:shadow-none sm:backdrop-blur-xl"
             >
               <div ref={categoryScrollerRef} className="mobile-scrollbar flex gap-2 overflow-x-auto pb-1">
-                {activeCategories.map((category) => (
+                {categoriesWithDishes.map((category) => (
                   <button
                     key={category.id}
                     ref={(element) => {
