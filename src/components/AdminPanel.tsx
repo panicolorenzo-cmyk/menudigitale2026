@@ -23,6 +23,7 @@ interface AdminPanelProps {
   state: MenuState;
   restaurant: Restaurant;
   language: LanguageCode;
+  dataReady?: boolean;
   onClose: () => void;
   onUpdate: (state: MenuState | ((currentState: MenuState) => MenuState)) => void;
   onSignOut?: () => void;
@@ -71,7 +72,7 @@ const buildAdminLink = (restaurantId: string) => {
   return `${window.location.origin}/admin?locale=${restaurantId}`;
 };
 
-export function AdminPanel({ state, restaurant, language, onClose, onUpdate, onSignOut }: AdminPanelProps) {
+export function AdminPanel({ state, restaurant, language, dataReady = true, onClose, onUpdate, onSignOut }: AdminPanelProps) {
   const [tab, setTab] = useState<AdminTab>('dishes');
 
   const restaurantCategories = useMemo(
@@ -290,7 +291,15 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate, onS
         </nav>
 
         <main className="flex-1 overflow-y-auto px-3 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6 sm:py-5">
-          {tab === 'dishes' ? (
+          {!dataReady ? (
+            <div className="flex h-full min-h-[12rem] items-center justify-center">
+              <div className="space-y-3 text-center">
+                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-gold/30 border-t-gold" />
+                <p className="text-sm text-muted">Caricamento dati…</p>
+              </div>
+            </div>
+          ) : null}
+          {dataReady && tab === 'dishes' ? (
             <section className="grid gap-5 lg:grid-cols-[1fr_1.1fr]">
               <div className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-3 sm:rounded-3xl sm:p-4">
                 <div className="mb-4 flex items-center gap-2">
@@ -414,7 +423,7 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate, onS
             </section>
           ) : null}
 
-          {tab === 'categories' ? (
+          {dataReady && tab === 'categories' ? (
             <section className="grid gap-5 lg:grid-cols-[1fr_1.1fr]">
               <div className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-3 sm:rounded-3xl sm:p-4">
                 <div className="mb-4 flex items-center gap-2">
@@ -484,7 +493,7 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate, onS
             </section>
           ) : null}
 
-          {tab === 'qr' ? (
+          {dataReady && tab === 'qr' ? (
             <section className="grid gap-5 md:grid-cols-2">
               {state.restaurants.map((item) => {
                 const link = buildRestaurantLink(item.id);

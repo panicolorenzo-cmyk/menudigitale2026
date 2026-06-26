@@ -125,7 +125,7 @@ export default function App() {
   );
 
   useEffect(() => {
-    if (!adminMode || !restaurant || adminOpen || pinOpen || supabaseAuthOpen) {
+    if (!adminMode || !restaurant || adminOpen || pinOpen || supabaseAuthOpen || !snapshotLoaded) {
       return;
     }
 
@@ -144,7 +144,7 @@ export default function App() {
     } else {
       setPinOpen(true);
     }
-  }, [adminMode, adminOpen, adminUnlocked, pinOpen, supabaseAuthOpen, restaurant]);
+  }, [adminMode, adminOpen, adminUnlocked, pinOpen, supabaseAuthOpen, restaurant, snapshotLoaded]);
 
   const updateMenuState = (nextState: MenuState | ((currentState: MenuState) => MenuState)) => {
     setMenuState((currentState) => {
@@ -261,6 +261,7 @@ export default function App() {
             state={menuState}
             restaurant={restaurant}
             language={language}
+            dataReady={snapshotLoaded}
             onClose={exitAdminRoute}
             onUpdate={updateMenuState}
             onSignOut={handleSignOut}
@@ -301,6 +302,7 @@ export default function App() {
           state={menuState}
           restaurant={restaurant}
           language={language}
+          dataReady={snapshotLoaded}
           onClose={() => setAdminOpen(false)}
           onUpdate={updateMenuState}
           onSignOut={handleSignOut}
