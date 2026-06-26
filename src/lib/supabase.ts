@@ -95,9 +95,20 @@ export const loadMenuSnapshot = async (): Promise<MenuState> => {
     return loadLocalMenu();
   }
 
-  const normalized = normalizeMenuState(data.payload);
-  saveLocalMenu(normalized);
-  return normalized;
+  const remote = normalizeMenuState(data.payload);
+  const local = loadLocalMenu();
+
+  const remoteTime = remote.updatedAt ? new Date(remote.updatedAt).getTime() : 0;
+  const localTime = local.updatedAt ? new Date(local.updatedAt).getTime() : 0;
+
+  if (localTime > remoteTime) {
+    // Local has newer edits (e.g. admin changes not yet synced) — keep them and try to push to Supabase
+    void persistMenuSnapshot(local);
+    return local;
+  }
+
+  saveLocalMenu(remote);
+  return remote;
 };
 
 export const saveMenuSnapshot = async (state: MenuState): Promise<void> => {
