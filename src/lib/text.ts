@@ -24,7 +24,7 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     adminArea: 'Area admin',
     chooseAdminVenue: 'Scegli il locale da gestire',
     manageMenu: 'Gestisci menu',
-    adminSeparateLink: 'Questo spazio è separato dal menu clienti. Accesso protetto con PIN demo 2222.',
+    adminSeparateLink: 'Questo spazio è separato dal menu clienti. Accesso protetto con email e password.',
     pin: 'PIN amministratore',
     enterPin: 'Inserisci PIN demo',
     unlock: 'Entra',

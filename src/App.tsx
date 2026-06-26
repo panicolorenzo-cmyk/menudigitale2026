@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Lock, ShieldCheck, Wine } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Wine } from 'lucide-react';
 import { AdminPanel } from './components/AdminPanel';
 import { DishCard } from './components/DishCard';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
@@ -9,7 +9,6 @@ import { getAdminSession, hasSupabaseConfig, loadMenuSnapshot, saveMenuSnapshot,
 import { txt } from './lib/text';
 import { LANGUAGES, type Category, type Dish, type LanguageCode, type MenuState, type Restaurant, type RestaurantId, type ServiceType } from './types';
 
-const PIN_DEMO = '2222';
 const LANDING_INTRO_TOTAL_MS = 13000;
 
 const isLanguageCode = (value: string | null): value is LanguageCode =>
@@ -92,15 +91,8 @@ export default function App() {
   const [selectedService, setSelectedService] = useState<ServiceType | null>(() => resolveInitialService());
   const [adminMode, setAdminMode] = useState(() => isAdminRoute());
   const [adminOpen, setAdminOpen] = useState(false);
-  const [pinOpen, setPinOpen] = useState(false);
   const [supabaseAuthOpen, setSupabaseAuthOpen] = useState(false);
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
-  const [adminUnlocked, setAdminUnlocked] = useState(() => {
-    if (typeof window === 'undefined') {
-      return false;
-    }
-    return window.sessionStorage.getItem('menu-digitale-2026-admin') === 'unlocked';
-  });
 
   useEffect(() => {
     let isActive = true;
@@ -148,26 +140,22 @@ export default function App() {
   );
 
   useEffect(() => {
-    if (!adminMode || !restaurant || adminOpen || pinOpen || supabaseAuthOpen || !snapshotLoaded) {
+    if (!adminMode || !restaurant || adminOpen || supabaseAuthOpen || !snapshotLoaded) {
       return;
     }
 
-    if (adminUnlocked) {
-      if (hasSupabaseConfig) {
-        void getAdminSession().then((hasSession) => {
-          if (hasSession) {
-            setAdminOpen(true);
-          } else {
-            setSupabaseAuthOpen(true);
-          }
-        });
-      } else {
-        setAdminOpen(true);
-      }
+    if (hasSupabaseConfig) {
+      void getAdminSession().then((hasSession) => {
+        if (hasSession) {
+          setAdminOpen(true);
+        } else {
+          setSupabaseAuthOpen(true);
+        }
+      });
     } else {
-      setPinOpen(true);
+      setAdminOpen(true);
     }
-  }, [adminMode, adminOpen, adminUnlocked, pinOpen, supabaseAuthOpen, restaurant, snapshotLoaded]);
+  }, [adminMode, adminOpen, supabaseAuthOpen, restaurant, snapshotLoaded]);
 
   const updateMenuState = (nextState: MenuState | ((currentState: MenuState) => MenuState)) => {
     setMenuState((currentState) => {
@@ -177,31 +165,6 @@ export default function App() {
   };
 
   const requestAdmin = () => {
-    if (adminUnlocked) {
-      if (hasSupabaseConfig) {
-        void getAdminSession().then((hasSession) => {
-          if (hasSession) {
-            setAdminOpen(true);
-          } else {
-            setSupabaseAuthOpen(true);
-          }
-        });
-      } else {
-        setAdminOpen(true);
-      }
-      return;
-    }
-
-    setPinOpen(true);
-  };
-
-  const unlockAdmin = () => {
-    setAdminUnlocked(true);
-    if (typeof window !== 'undefined') {
-      window.sessionStorage.setItem('menu-digitale-2026-admin', 'unlocked');
-    }
-    setPinOpen(false);
-
     if (hasSupabaseConfig) {
       void getAdminSession().then((hasSession) => {
         if (hasSession) {
@@ -222,16 +185,11 @@ export default function App() {
 
   const handleSignOut = () => {
     void signOutAdmin();
-    setAdminUnlocked(false);
     setAdminOpen(false);
-    if (typeof window !== 'undefined') {
-      window.sessionStorage.removeItem('menu-digitale-2026-admin');
-    }
   };
 
   const exitAdminRoute = () => {
     setAdminOpen(false);
-    setPinOpen(false);
     setSupabaseAuthOpen(false);
     setAdminMode(false);
 
@@ -273,14 +231,6 @@ export default function App() {
           onOpenAdmin={requestAdmin}
         />
 
-        {pinOpen ? (
-          <PinModal
-            language={language}
-            onClose={exitAdminRoute}
-            onUnlock={unlockAdmin}
-          />
-        ) : null}
-
         {supabaseAuthOpen ? (
           <SupabaseAuthModal
             language={language}
@@ -314,14 +264,6 @@ export default function App() {
         onLanguageChange={setLanguage}
         onChangeRestaurant={handleBackFromMenu}
       />
-
-      {pinOpen ? (
-        <PinModal
-          language={language}
-          onClose={() => setPinOpen(false)}
-          onUnlock={unlockAdmin}
-        />
-      ) : null}
 
       {supabaseAuthOpen ? (
         <SupabaseAuthModal
@@ -929,12 +871,6 @@ function AdminGateway({ restaurant, language, onChangeRestaurant, onOpenAdmin }:
   );
 }
 
-interface PinModalProps {
-  language: LanguageCode;
-  onClose: () => void;
-  onUnlock: () => void;
-}
-
 interface SupabaseAuthModalProps {
   language: LanguageCode;
   onClose: () => void;
@@ -1005,60 +941,6 @@ function SupabaseAuthModal({ language, onClose, onAuth }: SupabaseAuthModalProps
           <button type="submit" disabled={loading} className="admin-primary-button flex-1 justify-center">
             <ShieldCheck className="h-4 w-4" />
             {loading ? '...' : txt(language, 'unlock')}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-function PinModal({ language, onClose, onUnlock }: PinModalProps) {
-  const [pin, setPin] = useState('');
-  const [error, setError] = useState('');
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (pin === PIN_DEMO) {
-      onUnlock();
-      return;
-    }
-
-    setError(txt(language, 'wrongPin'));
-  };
-
-  return (
-    <div className="fixed inset-0 z-40 grid place-items-center bg-black/75 px-4 text-cream backdrop-blur-md">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-[1.75rem] border border-white/10 bg-taupe p-5 shadow-glow">
-        <div className="mb-5 flex items-center gap-3">
-          <div className="rounded-full bg-gold/15 p-3 text-gold">
-            <Lock className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase text-gold">{txt(language, 'admin')}</p>
-            <h2 className="font-display text-2xl">{txt(language, 'pin')}</h2>
-          </div>
-        </div>
-        <label className="space-y-2">
-          <span className="admin-label">{txt(language, 'enterPin')}</span>
-          <input
-            value={pin}
-            onChange={(event) => setPin(event.target.value)}
-            inputMode="numeric"
-            type="password"
-            autoFocus
-            className="admin-input text-center text-2xl tracking-[0.35em]"
-            placeholder="2222"
-          />
-        </label>
-        {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
-        <div className="mt-5 flex gap-2">
-          <button type="button" onClick={onClose} className="admin-secondary-button flex-1 justify-center">
-            {txt(language, 'close')}
-          </button>
-          <button type="submit" className="admin-primary-button flex-1 justify-center">
-            <ShieldCheck className="h-4 w-4" />
-            {txt(language, 'unlock')}
           </button>
         </div>
       </form>
