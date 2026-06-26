@@ -9,6 +9,7 @@ export const LANGUAGES = [
 
 export type LanguageCode = (typeof LANGUAGES)[number]['code'];
 export type RestaurantId = 'locanda22' | 'adelardi';
+export type ServiceType = 'cucina' | 'aperitivo';
 export type TranslatedText = Record<LanguageCode, string>;
 
 export interface Restaurant {
@@ -25,6 +26,7 @@ export interface Restaurant {
 export interface Category {
   id: string;
   restaurantId: RestaurantId;
+  serviceType: ServiceType;
   name: TranslatedText;
   active: boolean;
   sortOrder: number;

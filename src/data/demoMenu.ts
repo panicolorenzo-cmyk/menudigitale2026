@@ -45,62 +45,27 @@ export const demoRestaurants: Restaurant[] = [
 ];
 
 export const demoCategories: Category[] = [
-  {
-    id: 'l22-antipasti',
-    restaurantId: 'locanda22',
-    name: t('Antipasti', 'Starters', 'Entrées', 'Vorspeisen', 'Entrantes'),
-    active: true,
-    sortOrder: 10
-  },
-  {
-    id: 'l22-primi',
-    restaurantId: 'locanda22',
-    name: t('Primi piatti', 'Pasta & risotto', 'Pâtes et risotto', 'Pasta und Risotto', 'Pastas y risotto'),
-    active: true,
-    sortOrder: 20
-  },
-  {
-    id: 'l22-secondi',
-    restaurantId: 'locanda22',
-    name: t('Secondi', 'Mains', 'Plats', 'Hauptgerichte', 'Principales'),
-    active: true,
-    sortOrder: 30
-  },
-  {
-    id: 'l22-dolci',
-    restaurantId: 'locanda22',
-    name: t('Dolci', 'Desserts', 'Desserts', 'Desserts', 'Postres'),
-    active: true,
-    sortOrder: 40
-  },
-  {
-    id: 'ad-crudi',
-    restaurantId: 'adelardi',
-    name: t('Crudi e piccoli piatti', 'Raw bar & small plates', 'Crus et petites assiettes', 'Rohbar und kleine Teller', 'Crudos y platillos'),
-    active: true,
-    sortOrder: 10
-  },
-  {
-    id: 'ad-brace',
-    restaurantId: 'adelardi',
-    name: t('Dalla brace', 'From the grill', 'Au grill', 'Vom Grill', 'De la brasa'),
-    active: true,
-    sortOrder: 20
-  },
-  {
-    id: 'ad-pasta',
-    restaurantId: 'adelardi',
-    name: t('Pasta e stagione', 'Pasta & season', 'Pâtes et saison', 'Pasta und Saison', 'Pasta y temporada'),
-    active: true,
-    sortOrder: 30
-  },
-  {
-    id: 'ad-drink',
-    restaurantId: 'adelardi',
-    name: t('Cocktail e dessert', 'Cocktails & desserts', 'Cocktails et desserts', 'Cocktails und Desserts', 'Cócteles y postres'),
-    active: true,
-    sortOrder: 40
-  }
+  // Locanda 22 – Ristorante / Cucina
+  { id: 'l22-antipasti',      restaurantId: 'locanda22', serviceType: 'cucina', name: t('ANTIPASTI', 'Starters', 'Entrées', 'Vorspeisen', 'Entrantes'), active: true, sortOrder: 10 },
+  { id: 'l22-primi',          restaurantId: 'locanda22', serviceType: 'cucina', name: t('PRIMI PIATTI', 'Pasta & Risotto', 'Pâtes et risotto', 'Pasta und Risotto', 'Pastas y risotto'), active: true, sortOrder: 20 },
+  { id: 'l22-secondi',        restaurantId: 'locanda22', serviceType: 'cucina', name: t('SECONDI', 'Mains', 'Plats', 'Hauptgerichte', 'Principales'), active: true, sortOrder: 30 },
+  { id: 'l22-contorni',       restaurantId: 'locanda22', serviceType: 'cucina', name: t('CONTORNI', 'Sides', 'Accompagnements', 'Beilagen', 'Guarniciones'), active: true, sortOrder: 40 },
+  { id: 'l22-pizze',          restaurantId: 'locanda22', serviceType: 'cucina', name: t('PIZZE', 'Pizzas', 'Pizzas', 'Pizzen', 'Pizzas'), active: true, sortOrder: 50 },
+  { id: 'l22-pizze-speciali', restaurantId: 'locanda22', serviceType: 'cucina', name: t('PIZZE SPECIALI', 'Special pizzas', 'Pizzas spéciales', 'Spezialitätenpizzen', 'Pizzas especiales'), active: true, sortOrder: 60 },
+  { id: 'l22-hamburger',      restaurantId: 'locanda22', serviceType: 'cucina', name: t('HAMBURGER', 'Burgers', 'Hamburgers', 'Burger', 'Hamburguesas'), active: true, sortOrder: 70 },
+  { id: 'l22-birre',          restaurantId: 'locanda22', serviceType: 'cucina', name: t('BIRRE ALLA SPINA', 'Draft beers', 'Bières pression', 'Fassbier', 'Cervezas de barril'), active: true, sortOrder: 80 },
+  { id: 'l22-bibite',         restaurantId: 'locanda22', serviceType: 'cucina', name: t('BIBITE', 'Soft drinks', 'Boissons', 'Getränke', 'Bebidas'), active: true, sortOrder: 90 },
+  { id: 'l22-vini-rossi',     restaurantId: 'locanda22', serviceType: 'cucina', name: t('CARTA VINI ROSSI', 'Red wine list', 'Carte des vins rouges', 'Rotweinkarte', 'Carta vinos tintos'), active: true, sortOrder: 100 },
+  { id: 'l22-vini-bianchi',   restaurantId: 'locanda22', serviceType: 'cucina', name: t('CARTA VINI BIANCHI', 'White wine list', 'Carte des vins blancs', 'Weißweinkarte', 'Carta vinos blancos'), active: true, sortOrder: 110 },
+  { id: 'l22-vini-spumanti',  restaurantId: 'locanda22', serviceType: 'cucina', name: t('VINI SPUMANTI', 'Sparkling wines', 'Vins pétillants', 'Schaumweine', 'Vinos espumosos'), active: true, sortOrder: 120 },
+  { id: 'l22-vini-dessert',   restaurantId: 'locanda22', serviceType: 'cucina', name: t('VINI DA DESSERT', 'Dessert wines', 'Vins de dessert', 'Dessertweine', 'Vinos de postre'), active: true, sortOrder: 130 },
+  { id: 'l22-amari',          restaurantId: 'locanda22', serviceType: 'cucina', name: t('AMARI E CAFFETTERIA', 'Digestifs & coffee', 'Digestifs et café', 'Digestifs und Kaffee', 'Digestivos y cafetería'), active: true, sortOrder: 140 },
+  { id: 'l22-dolci',          restaurantId: 'locanda22', serviceType: 'cucina', name: t('DOLCI', 'Desserts', 'Desserts', 'Desserts', 'Postres'), active: true, sortOrder: 150 },
+  // Adelardi
+  { id: 'ad-crudi', restaurantId: 'adelardi', serviceType: 'cucina', name: t('Crudi e piccoli piatti', 'Raw bar & small plates', 'Crus et petites assiettes', 'Rohbar und kleine Teller', 'Crudos y platillos'), active: true, sortOrder: 10 },
+  { id: 'ad-brace', restaurantId: 'adelardi', serviceType: 'cucina', name: t('Dalla brace', 'From the grill', 'Au grill', 'Vom Grill', 'De la brasa'), active: true, sortOrder: 20 },
+  { id: 'ad-pasta', restaurantId: 'adelardi', serviceType: 'cucina', name: t('Pasta e stagione', 'Pasta & season', 'Pâtes et saison', 'Pasta und Saison', 'Pasta y temporada'), active: true, sortOrder: 30 },
+  { id: 'ad-drink', restaurantId: 'adelardi', serviceType: 'cucina', name: t('Cocktail e dessert', 'Cocktails & desserts', 'Cocktails et desserts', 'Cocktails und Desserts', 'Cócteles y postres'), active: true, sortOrder: 40 }
 ];
 
 export const demoDishes: Dish[] = [

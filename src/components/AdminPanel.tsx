@@ -8,13 +8,14 @@ import {
   QrCode,
   Save,
   Tags,
+  Trash2,
   Upload,
   Utensils,
   X
 } from 'lucide-react';
 import { hasSupabaseConfig, uploadMenuImage } from '../lib/supabase';
 import { txt } from '../lib/text';
-import { LANGUAGES, type Category, type Dish, type LanguageCode, type MenuState, type Restaurant, type TranslatedText } from '../types';
+import { LANGUAGES, type Category, type Dish, type LanguageCode, type MenuState, type Restaurant, type ServiceType, type TranslatedText } from '../types';
 import { QRCodeCanvas } from './QRCodeCanvas';
 
 type AdminTab = 'dishes' | 'categories' | 'qr';
@@ -98,6 +99,7 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
   const blankCategory = (): Category => ({
     id: '',
     restaurantId: restaurant.id,
+    serviceType: 'cucina',
     name: emptyTranslatedText(),
     active: true,
     sortOrder: restaurantCategories.length * 10 + 10
@@ -133,19 +135,21 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
     setDishDraft(blankDish());
   }, [restaurant.id]);
 
+  // Fix: only reset categoryId when restaurant changes, not when categories list changes
   useEffect(() => {
     setDishDraft((current) => ({
       ...current,
       restaurantId: restaurant.id,
       categoryId: getValidCategoryId(current.categoryId)
     }));
-  }, [restaurant.id, restaurantCategories]);
+  }, [restaurant.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveCategory = () => {
     const normalized: Category = {
       ...categoryDraft,
       id: categoryDraft.id || makeId(`${restaurant.id}-category`, categoryDraft.name.it || categoryDraft.name[language] || 'categoria'),
       restaurantId: restaurant.id,
+      serviceType: categoryDraft.serviceType ?? 'cucina',
       name: normalizeText(categoryDraft.name, 'Categoria'),
       sortOrder: Number(categoryDraft.sortOrder) || restaurantCategories.length * 10 + 10
     };
@@ -161,6 +165,25 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
       return { ...currentState, categories };
     });
     setCategoryDraft(blankCategory());
+  };
+
+  const deleteCategory = (category: Category) => {
+    const hasDishes = restaurantDishes.some((dish) => dish.categoryId === category.id);
+    if (hasDishes) {
+      alert(`Impossibile eliminare: la categoria "${category.name[language]}" contiene ancora dei piatti. Sposta o elimina i piatti prima.`);
+      return;
+    }
+
+    onUpdate((currentState) => ({
+      ...currentState,
+      categories: currentState.categories.filter(
+        (item) => !(item.id === category.id && item.restaurantId === restaurant.id)
+      )
+    }));
+
+    if (categoryDraft.id === category.id) {
+      setCategoryDraft(blankCategory());
+    }
   };
 
   const saveDish = () => {
@@ -227,7 +250,6 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
           setDishDraft((current) => ({ ...current, image: url }));
           return;
         }
-        // fallback to base64 if upload failed
         readAsDataUrl(file);
       });
       return;
@@ -438,6 +460,19 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                     value={categoryDraft.name}
                     onChange={(name) => setCategoryDraft((current) => ({ ...current, name }))}
                   />
+                  {restaurant.id === 'locanda22' ? (
+                    <label className="space-y-2">
+                      <span className="admin-label">{txt(language, 'serviceTypeLabel')}</span>
+                      <select
+                        value={categoryDraft.serviceType ?? 'cucina'}
+                        onChange={(event) => setCategoryDraft((current) => ({ ...current, serviceType: event.target.value as ServiceType }))}
+                        className="admin-input"
+                      >
+                        <option value="cucina">{txt(language, 'serviceCucina')}</option>
+                        <option value="aperitivo">{txt(language, 'serviceAperitivo')}</option>
+                      </select>
+                    </label>
+                  ) : null}
                   <label className="space-y-2">
                     <span className="admin-label">Ordine</span>
                     <input
@@ -472,9 +507,14 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                         <h4 className="font-display text-xl">{category.name[language]}</h4>
                         <p className="mt-1 text-sm text-muted">
                           {restaurantDishes.filter((dish) => dish.categoryId === category.id).length} piatti
+                          {restaurant.id === 'locanda22' ? (
+                            <span className="ml-2 rounded-full bg-white/8 px-2 py-0.5 text-[0.65rem] font-semibold uppercase">
+                              {category.serviceType === 'aperitivo' ? txt(language, 'serviceAperitivo') : txt(language, 'serviceCucina')}
+                            </span>
+                          ) : null}
                         </p>
                       </div>
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${category.active ? 'bg-gold text-ink' : 'bg-white/10 text-muted'}`}>
+                      <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${category.active ? 'bg-gold text-ink' : 'bg-white/10 text-muted'}`}>
                         {category.active ? txt(language, 'active') : txt(language, 'inactive')}
                       </span>
                     </div>
@@ -485,6 +525,14 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                       <button type="button" onClick={() => toggleCategory(category)} className="admin-secondary-button">
                         <Power className="h-3.5 w-3.5" />
                         {category.active ? txt(language, 'inactive') : txt(language, 'active')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteCategory(category)}
+                        className="admin-secondary-button text-red-400 hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-300"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Elimina
                       </button>
                     </div>
                   </div>

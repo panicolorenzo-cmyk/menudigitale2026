@@ -49,7 +49,12 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     email: 'Email',
     password: 'Password',
     loginTitle: 'Accesso admin',
-    logout: 'Disconnetti'
+    logout: 'Disconnetti',
+    serviceSelectTitle: 'Scegli il servizio',
+    serviceCucina: 'Ristorante / Cucina',
+    serviceAperitivo: 'Aperitivo',
+    aperitivoComingSoon: 'La sezione aperitivo è in aggiornamento. Torna presto.',
+    serviceTypeLabel: 'Tipo di servizio'
   },
   en: {
     chooseExperience: 'Choose your experience',
@@ -99,7 +104,12 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     email: 'Email',
     password: 'Password',
     loginTitle: 'Admin login',
-    logout: 'Sign out'
+    logout: 'Sign out',
+    serviceSelectTitle: 'Choose a service',
+    serviceCucina: 'Restaurant / Kitchen',
+    serviceAperitivo: 'Aperitivo',
+    aperitivoComingSoon: 'The aperitivo section is being updated. Come back soon.',
+    serviceTypeLabel: 'Service type'
   },
   fr: {
     chooseExperience: 'Choisissez votre experience',
@@ -149,7 +159,12 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     email: 'Email',
     password: 'Mot de passe',
     loginTitle: 'Connexion admin',
-    logout: 'Déconnexion'
+    logout: 'Déconnexion',
+    serviceSelectTitle: 'Choisir un service',
+    serviceCucina: 'Restaurant / Cuisine',
+    serviceAperitivo: 'Apéritif',
+    aperitivoComingSoon: 'La section apéritif est en cours de mise à jour. Revenez bientôt.',
+    serviceTypeLabel: 'Type de service'
   },
   de: {
     chooseExperience: 'Waehle dein Erlebnis',
@@ -199,7 +214,12 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     email: 'E-Mail',
     password: 'Passwort',
     loginTitle: 'Admin-Anmeldung',
-    logout: 'Abmelden'
+    logout: 'Abmelden',
+    serviceSelectTitle: 'Service wählen',
+    serviceCucina: 'Restaurant / Küche',
+    serviceAperitivo: 'Aperitif',
+    aperitivoComingSoon: 'Der Aperitif-Bereich wird aktualisiert. Bald wieder verfügbar.',
+    serviceTypeLabel: 'Servicetyp'
   },
   es: {
     chooseExperience: 'Elige tu experiencia',
@@ -249,7 +269,12 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     email: 'Email',
     password: 'Contraseña',
     loginTitle: 'Acceso admin',
-    logout: 'Cerrar sesión'
+    logout: 'Cerrar sesión',
+    serviceSelectTitle: 'Elegir servicio',
+    serviceCucina: 'Restaurante / Cocina',
+    serviceAperitivo: 'Aperitivo',
+    aperitivoComingSoon: 'La sección de aperitivo está en actualización. Vuelve pronto.',
+    serviceTypeLabel: 'Tipo de servicio'
   },
   ru: {
     chooseExperience: 'Выберите свой формат',
@@ -299,7 +324,12 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     email: 'Email',
     password: 'Пароль',
     loginTitle: 'Вход для администратора',
-    logout: 'Выйти'
+    logout: 'Выйти',
+    serviceSelectTitle: 'Выберите сервис',
+    serviceCucina: 'Ресторан / Кухня',
+    serviceAperitivo: 'Аперитив',
+    aperitivoComingSoon: 'Раздел аперитива обновляется. Скоро будет доступен.',
+    serviceTypeLabel: 'Тип сервиса'
   }
 };
 

@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Lock, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Lock, ShieldCheck, Utensils, Wine } from 'lucide-react';
 import { AdminPanel } from './components/AdminPanel';
 import { DishCard } from './components/DishCard';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
@@ -7,13 +7,16 @@ import locanda22IntroLogoSvg from './generated/locanda22IntroLogo.svg?raw';
 import { loadLocalMenu } from './lib/localMenu';
 import { getAdminSession, hasSupabaseConfig, loadMenuSnapshot, saveMenuSnapshot, signInAdmin, signOutAdmin } from './lib/supabase';
 import { txt } from './lib/text';
-import { LANGUAGES, type Category, type Dish, type LanguageCode, type MenuState, type Restaurant, type RestaurantId } from './types';
+import { LANGUAGES, type Category, type Dish, type LanguageCode, type MenuState, type Restaurant, type RestaurantId, type ServiceType } from './types';
 
 const PIN_DEMO = '2222';
 const LANDING_INTRO_TOTAL_MS = 13000;
 
 const isLanguageCode = (value: string | null): value is LanguageCode =>
   Boolean(value && LANGUAGES.some((language) => language.code === value));
+
+const isServiceType = (value: string | null): value is ServiceType =>
+  value === 'cucina' || value === 'aperitivo';
 
 const getStoredLanguage = (): LanguageCode => {
   if (typeof window === 'undefined') {
@@ -38,6 +41,16 @@ const resolveInitialRestaurant = (state: MenuState): RestaurantId | null => {
   return matched?.id ?? null;
 };
 
+const resolveInitialService = (): ServiceType | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get('service');
+  return isServiceType(value) ? value : null;
+};
+
 const isAdminRoute = () => {
   if (typeof window === 'undefined') {
     return false;
@@ -47,7 +60,7 @@ const isAdminRoute = () => {
   return window.location.pathname.startsWith('/admin') || params.get('admin') === '1';
 };
 
-const updateUrlRestaurant = (restaurantId: RestaurantId | null) => {
+const updateUrlRestaurant = (restaurantId: RestaurantId | null, service: ServiceType | null) => {
   if (typeof window === 'undefined') {
     return;
   }
@@ -57,7 +70,16 @@ const updateUrlRestaurant = (restaurantId: RestaurantId | null) => {
     url.searchParams.set('locale', restaurantId);
   } else {
     url.searchParams.delete('locale');
+    url.searchParams.delete('service');
+    return window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
   }
+
+  if (service) {
+    url.searchParams.set('service', service);
+  } else {
+    url.searchParams.delete('service');
+  }
+
   window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
 };
 
@@ -67,6 +89,7 @@ export default function App() {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<RestaurantId | null>(() =>
     resolveInitialRestaurant(loadLocalMenu())
   );
+  const [selectedService, setSelectedService] = useState<ServiceType | null>(() => resolveInitialService());
   const [adminMode, setAdminMode] = useState(() => isAdminRoute());
   const [adminOpen, setAdminOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
@@ -104,8 +127,8 @@ export default function App() {
   }, [language]);
 
   useEffect(() => {
-    updateUrlRestaurant(selectedRestaurantId);
-  }, [selectedRestaurantId]);
+    updateUrlRestaurant(selectedRestaurantId, selectedService);
+  }, [selectedRestaurantId, selectedService]);
 
   useEffect(() => {
     if (!snapshotLoaded) {
@@ -218,6 +241,23 @@ export default function App() {
     }
   };
 
+  const handleSelectRestaurant = (id: RestaurantId) => {
+    setSelectedRestaurantId(id);
+    // locanda22 always requires service selection first
+    if (id === 'locanda22') {
+      setSelectedService(null);
+    }
+  };
+
+  const handleBackFromMenu = () => {
+    if (restaurant?.id === 'locanda22' && selectedService !== null) {
+      // go back to service sub-landing
+      setSelectedService(null);
+    } else {
+      setSelectedRestaurantId(null);
+    }
+  };
+
   if (!restaurant) {
     return (
       <Landing
@@ -225,7 +265,19 @@ export default function App() {
         language={language}
         adminMode={adminMode}
         onLanguageChange={setLanguage}
-        onSelectRestaurant={setSelectedRestaurantId}
+        onSelectRestaurant={handleSelectRestaurant}
+      />
+    );
+  }
+
+  if (restaurant.id === 'locanda22' && !adminMode && selectedService === null) {
+    return (
+      <ServiceLanding
+        restaurant={restaurant}
+        language={language}
+        onLanguageChange={setLanguage}
+        onBack={() => setSelectedRestaurantId(null)}
+        onSelectService={setSelectedService}
       />
     );
   }
@@ -276,9 +328,10 @@ export default function App() {
       <MenuExperience
         state={menuState}
         restaurant={restaurant}
+        service={selectedService}
         language={language}
         onLanguageChange={setLanguage}
-        onChangeRestaurant={() => setSelectedRestaurantId(null)}
+        onChangeRestaurant={handleBackFromMenu}
       />
 
       {pinOpen ? (
@@ -493,33 +546,108 @@ function LandingCard({ restaurant, language, adminMode, index, onSelect }: Landi
   );
 }
 
+interface ServiceLandingProps {
+  restaurant: Restaurant;
+  language: LanguageCode;
+  onLanguageChange: (language: LanguageCode) => void;
+  onBack: () => void;
+  onSelectService: (service: ServiceType) => void;
+}
+
+function ServiceLanding({ restaurant, language, onLanguageChange, onBack, onSelectService }: ServiceLandingProps) {
+  return (
+    <main className="relative min-h-[100svh] overflow-hidden bg-[#0b0907] text-cream">
+      <img src={restaurant.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-ink/50 to-[#0b0907]" />
+
+      <div className="absolute inset-x-0 top-0 z-30 flex items-start justify-between px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:px-8 sm:pt-5">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full border border-white/15 bg-black/25 px-4 text-xs font-semibold uppercase text-cream backdrop-blur-md transition hover:bg-white/10"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="hidden sm:inline">{txt(language, 'changeVenue')}</span>
+        </button>
+        <LanguageSwitcher value={language} onChange={onLanguageChange} compact />
+      </div>
+
+      <section className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-4xl flex-col justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-[calc(env(safe-area-inset-top)+5rem)] sm:px-8">
+        <div className="animate-fadeUp">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gold-soft">{restaurant.name}</p>
+          <h1 className="font-display text-[clamp(2.6rem,12vw,4.5rem)] leading-[0.92]">
+            {txt(language, 'serviceSelectTitle')}
+          </h1>
+          <div className="mt-2 h-px w-12 bg-gold/50" />
+        </div>
+
+        <div className="mt-10 grid gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-5">
+          <button
+            type="button"
+            onClick={() => onSelectService('cucina')}
+            className="group relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-taupe/60 p-6 text-left shadow-glow backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-gold/60 sm:rounded-[2rem] sm:p-7"
+          >
+            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-gold/15 text-gold transition group-hover:bg-gold/25">
+              <Utensils className="h-5 w-5" />
+            </div>
+            <h2 className="font-display text-[clamp(2rem,7vw,2.75rem)] leading-tight">
+              {txt(language, 'serviceCucina')}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-cream/70">{restaurant.subtitle[language]}</p>
+            <div className="mt-4 h-px w-8 bg-gold/50 transition-all duration-300 group-hover:w-16" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onSelectService('aperitivo')}
+            className="group relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-taupe/60 p-6 text-left shadow-glow backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-gold/60 sm:rounded-[2rem] sm:p-7"
+          >
+            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-gold/15 text-gold transition group-hover:bg-gold/25">
+              <Wine className="h-5 w-5" />
+            </div>
+            <h2 className="font-display text-[clamp(2rem,7vw,2.75rem)] leading-tight">
+              {txt(language, 'serviceAperitivo')}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-cream/70">{txt(language, 'aperitivoDescription')}</p>
+            <div className="mt-4 h-px w-8 bg-gold/50 transition-all duration-300 group-hover:w-16" />
+          </button>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 interface MenuExperienceProps {
   state: MenuState;
   restaurant: Restaurant;
+  service: ServiceType | null;
   language: LanguageCode;
   onLanguageChange: (language: LanguageCode) => void;
   onChangeRestaurant: () => void;
 }
 
-function MenuExperience({ state, restaurant, language, onLanguageChange, onChangeRestaurant }: MenuExperienceProps) {
+function MenuExperience({ state, restaurant, service, language, onLanguageChange, onChangeRestaurant }: MenuExperienceProps) {
   const [selectedCategory, setSelectedCategory] = useState('');
   const categoryBarRef = useRef<HTMLDivElement | null>(null);
   const categoryScrollerRef = useRef<HTMLDivElement | null>(null);
   const categoryScrollAnimationRef = useRef<number | null>(null);
   const sectionRefs = useRef(new Map<string, HTMLElement | null>());
   const buttonRefs = useRef(new Map<string, HTMLButtonElement | null>());
-  const showAdelardiFoodLogo = restaurant.id === 'locanda22' || restaurant.id === 'adelardi';
-  const showHeroDescription = restaurant.id === 'adelardi';
-  const publicTitle = restaurant.id === 'locanda22' ? 'Adelardi' : restaurant.name;
-  const publicSubtitle = restaurant.id === 'locanda22' ? 'Pizza e food' : restaurant.subtitle[language];
 
-  const restaurantCategories = useMemo(
-    () =>
-      state.categories
-        .filter((category) => category.restaurantId === restaurant.id)
-        .sort((a, b) => a.sortOrder - b.sortOrder),
-    [restaurant.id, state.categories]
-  );
+  const isLocanda22 = restaurant.id === 'locanda22';
+  const showAdelardiFoodLogo = restaurant.id === 'adelardi';
+  const showHeroDescription = restaurant.id === 'adelardi';
+
+  const restaurantCategories = useMemo(() => {
+    const filtered = state.categories
+      .filter((category) => {
+        if (category.restaurantId !== restaurant.id) return false;
+        if (isLocanda22 && service !== null) return category.serviceType === service;
+        return true;
+      })
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    return filtered;
+  }, [restaurant.id, isLocanda22, service, state.categories]);
 
   const activeCategoryIds = useMemo(
     () => new Set(restaurantCategories.filter((category) => category.active).map((category) => category.id)),
@@ -552,6 +680,8 @@ function MenuExperience({ state, restaurant, language, onLanguageChange, onChang
       })),
     [categoriesWithDishes, dishes]
   );
+
+  const isAperitivoEmpty = isLocanda22 && service === 'aperitivo' && dishSections.length === 0;
 
   useEffect(() => {
     if (categoriesWithDishes.length === 0) {
@@ -772,9 +902,9 @@ function MenuExperience({ state, restaurant, language, onLanguageChange, onChang
               </>
             ) : (
               <>
-                <h1 className="font-display text-[clamp(3.2rem,18vw,6rem)] leading-[0.9] sm:text-8xl">{publicTitle}</h1>
+                <h1 className="font-display text-[clamp(3.2rem,18vw,6rem)] leading-[0.9] sm:text-8xl">{restaurant.name}</h1>
                 <p className="mt-4 max-w-2xl text-[0.95rem] leading-6 text-cream/80 sm:mt-5 sm:text-xl sm:leading-8">
-                  {publicSubtitle}
+                  {restaurant.subtitle[language]}
                 </p>
               </>
             )}
@@ -788,49 +918,60 @@ function MenuExperience({ state, restaurant, language, onLanguageChange, onChang
       </section>
 
       <section id="menu" className="mx-auto w-full max-w-6xl px-3 py-0 sm:px-8 sm:py-10">
-        <div
-          ref={categoryBarRef}
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-white/8 bg-black px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-[0_-20px_45px_rgba(0,0,0,0.58)] sm:sticky sm:top-0 sm:bottom-auto sm:z-30 sm:-mx-8 sm:border-y sm:border-white/10 sm:bg-coal/95 sm:px-8 sm:py-4 sm:shadow-none sm:backdrop-blur-xl"
-        >
-          <div ref={categoryScrollerRef} className="mobile-scrollbar flex gap-2 overflow-x-auto pb-1">
-            {categoriesWithDishes.map((category) => (
-              <button
-                key={category.id}
-                ref={(element) => {
-                  buttonRefs.current.set(category.id, element);
-                }}
-                type="button"
-                onClick={() => scrollToCategory(category.id)}
-                className={`category-chip ${selectedCategory === category.id ? 'category-chip-active' : ''}`}
-              >
-                {category.name[language]}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {dishSections.length > 0 ? (
-          <div className="space-y-5 pb-[calc(env(safe-area-inset-bottom)+6.75rem)] pt-4 sm:space-y-8 sm:py-6">
-            {dishSections.map(({ category, dishes: categoryDishes }) => (
-              <section
-                key={category.id}
-                ref={(element) => {
-                  sectionRefs.current.set(category.id, element);
-                }}
-                className="scroll-mt-24"
-              >
-                <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-                  {categoryDishes.map((dish) => (
-                    <DishCard key={dish.id} dish={dish} category={categoryById.get(dish.categoryId)} language={language} />
-                  ))}
-                </div>
-              </section>
-            ))}
+        {isAperitivoEmpty ? (
+          <div className="my-16 flex flex-col items-center justify-center gap-5 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-taupe text-gold">
+              <Wine className="h-7 w-7" />
+            </div>
+            <p className="max-w-sm text-base leading-7 text-cream/70">{txt(language, 'aperitivoComingSoon')}</p>
           </div>
         ) : (
-          <div className="my-10 rounded-3xl border border-white/10 bg-taupe p-8 text-center">
-            <p className="font-display text-2xl">{txt(language, 'noResults')}</p>
-          </div>
+          <>
+            <div
+              ref={categoryBarRef}
+              className="fixed inset-x-0 bottom-0 z-40 border-t border-white/8 bg-black px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-[0_-20px_45px_rgba(0,0,0,0.58)] sm:sticky sm:top-0 sm:bottom-auto sm:z-30 sm:-mx-8 sm:border-y sm:border-white/10 sm:bg-coal/95 sm:px-8 sm:py-4 sm:shadow-none sm:backdrop-blur-xl"
+            >
+              <div ref={categoryScrollerRef} className="mobile-scrollbar flex gap-2 overflow-x-auto pb-1">
+                {categoriesWithDishes.map((category) => (
+                  <button
+                    key={category.id}
+                    ref={(element) => {
+                      buttonRefs.current.set(category.id, element);
+                    }}
+                    type="button"
+                    onClick={() => scrollToCategory(category.id)}
+                    className={`category-chip ${selectedCategory === category.id ? 'category-chip-active' : ''}`}
+                  >
+                    {category.name[language]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {dishSections.length > 0 ? (
+              <div className="space-y-5 pb-[calc(env(safe-area-inset-bottom)+6.75rem)] pt-4 sm:space-y-8 sm:py-6">
+                {dishSections.map(({ category, dishes: categoryDishes }) => (
+                  <section
+                    key={category.id}
+                    ref={(element) => {
+                      sectionRefs.current.set(category.id, element);
+                    }}
+                    className="scroll-mt-24"
+                  >
+                    <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+                      {categoryDishes.map((dish) => (
+                        <DishCard key={dish.id} dish={dish} category={categoryById.get(dish.categoryId)} language={language} />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <div className="my-10 rounded-3xl border border-white/10 bg-taupe p-8 text-center">
+                <p className="font-display text-2xl">{txt(language, 'noResults')}</p>
+              </div>
+            )}
+          </>
         )}
       </section>
     </main>

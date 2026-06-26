@@ -1,5 +1,5 @@
 import { demoMenu } from '../data/demoMenu';
-import { LANGUAGES, type MenuState, type RestaurantId, type TranslatedText } from '../types';
+import { LANGUAGES, type MenuState, type RestaurantId, type ServiceType, type TranslatedText } from '../types';
 
 const STORAGE_KEY = 'menu-digitale-2026-state';
 
@@ -21,6 +21,9 @@ const normalizeTranslatedText = (value: unknown, fallback = ''): TranslatedText 
 
 const isRestaurantId = (value: unknown): value is RestaurantId => value === 'locanda22' || value === 'adelardi';
 
+const resolveServiceType = (value: unknown): ServiceType =>
+  (value as string) === 'aperitivo' ? 'aperitivo' : 'cucina';
+
 export const isMenuState = (value: unknown): value is MenuState => {
   if (!value || typeof value !== 'object') {
     return false;
@@ -39,6 +42,7 @@ export const normalizeMenuState = (state: MenuState): MenuState => ({
   categories: state.categories.map((category) => ({
     ...category,
     restaurantId: isRestaurantId(category.restaurantId) ? category.restaurantId : 'locanda22',
+    serviceType: resolveServiceType((category as unknown as Record<string, unknown>).serviceType),
     name: normalizeTranslatedText(category.name, 'Categoria')
   })),
   dishes: state.dishes.map((dish) => ({
