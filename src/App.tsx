@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Lock, ShieldCheck, Utensils, Wine } from 'lucide-react';
+import { ArrowLeft, Lock, ShieldCheck, Wine } from 'lucide-react';
 import { AdminPanel } from './components/AdminPanel';
 import { DishCard } from './components/DishCard';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
@@ -243,19 +243,12 @@ export default function App() {
 
   const handleSelectRestaurant = (id: RestaurantId) => {
     setSelectedRestaurantId(id);
-    // locanda22 always requires service selection first
-    if (id === 'locanda22') {
-      setSelectedService(null);
-    }
+    setSelectedService(id === 'locanda22' ? 'cucina' : null);
   };
 
   const handleBackFromMenu = () => {
-    if (restaurant?.id === 'locanda22' && selectedService !== null) {
-      // go back to service sub-landing
-      setSelectedService(null);
-    } else {
-      setSelectedRestaurantId(null);
-    }
+    setSelectedRestaurantId(null);
+    setSelectedService(null);
   };
 
   if (!restaurant) {
@@ -266,18 +259,6 @@ export default function App() {
         adminMode={adminMode}
         onLanguageChange={setLanguage}
         onSelectRestaurant={handleSelectRestaurant}
-      />
-    );
-  }
-
-  if (restaurant.id === 'locanda22' && !adminMode && selectedService === null) {
-    return (
-      <ServiceLanding
-        restaurant={restaurant}
-        language={language}
-        onLanguageChange={setLanguage}
-        onBack={() => setSelectedRestaurantId(null)}
-        onSelectService={setSelectedService}
       />
     );
   }
@@ -543,77 +524,6 @@ function LandingCard({ restaurant, language, adminMode, index, onSelect }: Landi
         </div>
       </div>
     </button>
-  );
-}
-
-interface ServiceLandingProps {
-  restaurant: Restaurant;
-  language: LanguageCode;
-  onLanguageChange: (language: LanguageCode) => void;
-  onBack: () => void;
-  onSelectService: (service: ServiceType) => void;
-}
-
-function ServiceLanding({ restaurant, language, onLanguageChange, onBack, onSelectService }: ServiceLandingProps) {
-  return (
-    <main className="relative min-h-[100svh] overflow-hidden bg-[#0b0907] text-cream">
-      <img src={restaurant.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-ink/50 to-[#0b0907]" />
-
-      <div className="absolute inset-x-0 top-0 z-30 flex items-start justify-between px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:px-8 sm:pt-5">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full border border-white/15 bg-black/25 px-4 text-xs font-semibold uppercase text-cream backdrop-blur-md transition hover:bg-white/10"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">{txt(language, 'changeVenue')}</span>
-        </button>
-        <LanguageSwitcher value={language} onChange={onLanguageChange} compact />
-      </div>
-
-      <section className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-4xl flex-col justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-[calc(env(safe-area-inset-top)+5rem)] sm:px-8">
-        <div className="animate-fadeUp">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gold-soft">{restaurant.name}</p>
-          <h1 className="font-display text-[clamp(2.6rem,12vw,4.5rem)] leading-[0.92]">
-            {txt(language, 'serviceSelectTitle')}
-          </h1>
-          <div className="mt-2 h-px w-12 bg-gold/50" />
-        </div>
-
-        <div className="mt-10 grid gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-5">
-          <button
-            type="button"
-            onClick={() => onSelectService('cucina')}
-            className="group relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-taupe/60 p-6 text-left shadow-glow backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-gold/60 sm:rounded-[2rem] sm:p-7"
-          >
-            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-gold/15 text-gold transition group-hover:bg-gold/25">
-              <Utensils className="h-5 w-5" />
-            </div>
-            <h2 className="font-display text-[clamp(2rem,7vw,2.75rem)] leading-tight">
-              {txt(language, 'serviceCucina')}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-cream/70">{restaurant.subtitle[language]}</p>
-            <div className="mt-4 h-px w-8 bg-gold/50 transition-all duration-300 group-hover:w-16" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onSelectService('aperitivo')}
-            className="group relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-taupe/60 p-6 text-left shadow-glow backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-gold/60 sm:rounded-[2rem] sm:p-7"
-          >
-            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-gold/15 text-gold transition group-hover:bg-gold/25">
-              <Wine className="h-5 w-5" />
-            </div>
-            <h2 className="font-display text-[clamp(2rem,7vw,2.75rem)] leading-tight">
-              {txt(language, 'serviceAperitivo')}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-cream/70">{txt(language, 'aperitivoDescription')}</p>
-            <div className="mt-4 h-px w-8 bg-gold/50 transition-all duration-300 group-hover:w-16" />
-          </button>
-        </div>
-      </section>
-    </main>
   );
 }
 
