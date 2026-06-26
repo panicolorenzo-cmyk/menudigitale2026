@@ -14,12 +14,36 @@ const createSupabaseClient = (): SupabaseClient | null => {
     return null;
   }
 
-  return createClient(supabaseUrl, supabaseAnonKey);
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      persistSession: false
+    }
+  });
 };
 
 export const supabase: SupabaseClient | null = createSupabaseClient();
 
 const SNAPSHOT_ID = 'main';
+let queuedSnapshot: MenuState | null = null;
+let saveInProgress = false;
+
+const persistMenuSnapshot = async (state: MenuState): Promise<void> => {
+  if (!supabase) {
+    return;
+  }
+
+  const { error } = await supabase.from('menu_state').upsert({
+    id: SNAPSHOT_ID,
+    payload: state,
+    updated_at: state.updatedAt
+  });
+
+  if (error) {
+    console.warn('Supabase save failed, data kept locally.', error.message);
+  }
+};
 
 export const loadMenuSnapshot = async (): Promise<MenuState> => {
   if (!supabase) {
@@ -41,19 +65,28 @@ export const loadMenuSnapshot = async (): Promise<MenuState> => {
 };
 
 export const saveMenuSnapshot = async (state: MenuState): Promise<void> => {
-  saveLocalMenu(state);
+  const normalized = normalizeMenuState({ ...state, updatedAt: new Date().toISOString() });
+  saveLocalMenu(normalized);
 
   if (!supabase) {
     return;
   }
 
-  const { error } = await supabase.from('menu_state').upsert({
-    id: SNAPSHOT_ID,
-    payload: { ...state, updatedAt: new Date().toISOString() },
-    updated_at: new Date().toISOString()
-  });
+  queuedSnapshot = normalized;
 
-  if (error) {
-    console.warn('Supabase save failed, data kept locally.', error.message);
+  if (saveInProgress) {
+    return;
+  }
+
+  saveInProgress = true;
+
+  try {
+    while (queuedSnapshot) {
+      const nextSnapshot = queuedSnapshot;
+      queuedSnapshot = null;
+      await persistMenuSnapshot(nextSnapshot);
+    }
+  } finally {
+    saveInProgress = false;
   }
 };

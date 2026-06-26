@@ -1,5 +1,5 @@
 import { demoMenu } from '../data/demoMenu';
-import { LANGUAGES, type MenuState, type TranslatedText } from '../types';
+import { LANGUAGES, type MenuState, type RestaurantId, type TranslatedText } from '../types';
 
 const STORAGE_KEY = 'menu-digitale-2026-state';
 
@@ -19,6 +19,8 @@ const normalizeTranslatedText = (value: unknown, fallback = ''): TranslatedText 
   }, {} as TranslatedText);
 };
 
+const isRestaurantId = (value: unknown): value is RestaurantId => value === 'locanda22' || value === 'adelardi';
+
 export const isMenuState = (value: unknown): value is MenuState => {
   if (!value || typeof value !== 'object') {
     return false;
@@ -36,12 +38,19 @@ export const normalizeMenuState = (state: MenuState): MenuState => ({
   })),
   categories: state.categories.map((category) => ({
     ...category,
+    restaurantId: isRestaurantId(category.restaurantId) ? category.restaurantId : 'locanda22',
     name: normalizeTranslatedText(category.name, 'Categoria')
   })),
   dishes: state.dishes.map((dish) => ({
     ...dish,
+    restaurantId: isRestaurantId(dish.restaurantId) ? dish.restaurantId : 'locanda22',
+    categoryId: typeof dish.categoryId === 'string' ? dish.categoryId : '',
     name: normalizeTranslatedText(dish.name, 'Piatto'),
-    description: normalizeTranslatedText(dish.description, '')
+    description: normalizeTranslatedText(dish.description, ''),
+    allergens: Array.isArray(dish.allergens) ? dish.allergens.filter((allergen): allergen is string => typeof allergen === 'string') : [],
+    price: Number(dish.price) || 0,
+    image: typeof dish.image === 'string' ? dish.image : '',
+    active: dish.active !== false
   }))
 });
 

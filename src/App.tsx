@@ -135,8 +135,11 @@ export default function App() {
     }
   }, [adminMode, adminOpen, adminUnlocked, pinOpen, restaurant]);
 
-  const updateMenuState = (nextState: MenuState) => {
-    setMenuState({ ...nextState, updatedAt: new Date().toISOString() });
+  const updateMenuState = (nextState: MenuState | ((currentState: MenuState) => MenuState)) => {
+    setMenuState((currentState) => {
+      const resolvedState = typeof nextState === 'function' ? nextState(currentState) : nextState;
+      return { ...resolvedState, updatedAt: new Date().toISOString() };
+    });
   };
 
   const requestAdmin = () => {

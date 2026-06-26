@@ -23,8 +23,10 @@ interface AdminPanelProps {
   restaurant: Restaurant;
   language: LanguageCode;
   onClose: () => void;
-  onUpdate: (state: MenuState) => void;
+  onUpdate: (state: MenuState | ((currentState: MenuState) => MenuState)) => void;
 }
+
+const DEFAULT_DISH_IMAGE = 'https://images.unsplash.com/photo-1543352634-a1c51d9f1fa7?auto=format&fit=crop&w=1100&q=84';
 
 const emptyTranslatedText = (): TranslatedText =>
   LANGUAGES.reduce((accumulator, language) => {
@@ -101,6 +103,13 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
   const getValidCategoryId = (categoryId?: string) =>
     restaurantCategories.some((category) => category.id === categoryId) ? categoryId ?? '' : restaurantCategories[0]?.id ?? '';
 
+  const cloneDishForDraft = (dish: Dish): Dish => ({
+    ...dish,
+    name: { ...dish.name },
+    description: { ...dish.description },
+    allergens: [...dish.allergens]
+  });
+
   const blankDish = (categoryId?: string): Dish => ({
     id: '',
     restaurantId: restaurant.id,
@@ -109,7 +118,7 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
     description: emptyTranslatedText(),
     allergens: [],
     price: 0,
-    image: 'https://images.unsplash.com/photo-1543352634-a1c51d9f1fa7?auto=format&fit=crop&w=1100&q=84',
+    image: DEFAULT_DISH_IMAGE,
     active: true
   });
 
@@ -138,47 +147,68 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
       sortOrder: Number(categoryDraft.sortOrder) || restaurantCategories.length * 10 + 10
     };
 
-    const exists = state.categories.some((category) => category.id === normalized.id);
-    const categories = exists
-      ? state.categories.map((category) => (category.id === normalized.id ? normalized : category))
-      : [...state.categories, normalized];
+    onUpdate((currentState) => {
+      const exists = currentState.categories.some((category) => category.id === normalized.id && category.restaurantId === restaurant.id);
+      const categories = exists
+        ? currentState.categories.map((category) =>
+            category.id === normalized.id && category.restaurantId === restaurant.id ? normalized : category
+          )
+        : [...currentState.categories, normalized];
 
-    onUpdate({ ...state, categories });
+      return { ...currentState, categories };
+    });
     setCategoryDraft(blankCategory());
   };
 
   const saveDish = () => {
+    const existingDish = dishDraft.id
+      ? state.dishes.find((dish) => dish.id === dishDraft.id && dish.restaurantId === restaurant.id)
+      : undefined;
+    const categoryId = getValidCategoryId(dishDraft.categoryId);
+    const image = dishDraft.image.trim() || existingDish?.image || DEFAULT_DISH_IMAGE;
     const normalized: Dish = {
+      ...existingDish,
       ...dishDraft,
       id: dishDraft.id || makeId(`${restaurant.id}-dish`, dishDraft.name.it || dishDraft.name[language] || 'piatto'),
       restaurantId: restaurant.id,
-      categoryId: dishDraft.categoryId || restaurantCategories[0]?.id || '',
+      categoryId,
       name: normalizeText(dishDraft.name, 'Piatto'),
       description: normalizeText(dishDraft.description, ''),
       allergens: dishDraft.allergens.map((allergen) => allergen.trim()).filter(Boolean),
-      price: Number(dishDraft.price) || 0
+      price: Number(dishDraft.price) || 0,
+      image
     };
 
-    const exists = state.dishes.some((dish) => dish.id === normalized.id);
-    const dishes = exists
-      ? state.dishes.map((dish) => (dish.id === normalized.id ? normalized : dish))
-      : [...state.dishes, normalized];
+    onUpdate((currentState) => {
+      const exists = currentState.dishes.some((dish) => dish.id === normalized.id && dish.restaurantId === restaurant.id);
+      const dishes = exists
+        ? currentState.dishes.map((dish) =>
+            dish.id === normalized.id && dish.restaurantId === restaurant.id ? { ...dish, ...normalized } : dish
+          )
+        : [...currentState.dishes, normalized];
 
-    onUpdate({ ...state, dishes });
+      return { ...currentState, dishes };
+    });
     setDishDraft(blankDish(normalized.categoryId));
   };
 
   const toggleDish = (dish: Dish) => {
-    onUpdate({
-      ...state,
-      dishes: state.dishes.map((item) => (item.id === dish.id ? { ...item, active: !item.active } : item))
+    onUpdate((currentState) => {
+      const dishes = currentState.dishes.map((item) =>
+        item.id === dish.id && item.restaurantId === restaurant.id ? { ...item, active: !item.active } : item
+      );
+
+      return { ...currentState, dishes };
     });
   };
 
   const toggleCategory = (category: Category) => {
-    onUpdate({
-      ...state,
-      categories: state.categories.map((item) => (item.id === category.id ? { ...item, active: !item.active } : item))
+    onUpdate((currentState) => {
+      const categories = currentState.categories.map((item) =>
+        item.id === category.id && item.restaurantId === restaurant.id ? { ...item, active: !item.active } : item
+      );
+
+      return { ...currentState, categories };
     });
   };
 
@@ -336,7 +366,7 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
                           <h4 className="line-clamp-2 font-display text-lg leading-tight sm:text-xl">{dish.name[language]}</h4>
                           <p className="mt-1 text-sm text-muted">€ {dish.price.toFixed(2)}</p>
                           <div className="mt-3 flex flex-wrap gap-2">
-                            <button type="button" onClick={() => setDishDraft(dish)} className="admin-secondary-button">
+                            <button type="button" onClick={() => setDishDraft(cloneDishForDraft(dish))} className="admin-secondary-button">
                               Modifica
                             </button>
                             <button type="button" onClick={() => toggleDish(dish)} className="admin-secondary-button">
