@@ -65,9 +65,9 @@ export const uploadMenuImage = async (file: File): Promise<string | null> => {
   return data.publicUrl;
 };
 
-const persistMenuSnapshot = async (state: MenuState): Promise<void> => {
+const persistMenuSnapshot = async (state: MenuState): Promise<boolean> => {
   if (!supabase) {
-    return;
+    return false;
   }
 
   const { error } = await supabase.from('menu_state').upsert({
@@ -77,8 +77,11 @@ const persistMenuSnapshot = async (state: MenuState): Promise<void> => {
   });
 
   if (error) {
-    console.warn('Supabase save failed, data kept locally.', error.message);
+    console.error('[Menu] Salvataggio Supabase fallito:', error.message);
+    return false;
   }
+
+  return true;
 };
 
 export const loadMenuSnapshot = async (): Promise<MenuState> => {
@@ -111,29 +114,35 @@ export const loadMenuSnapshot = async (): Promise<MenuState> => {
   return remote;
 };
 
-export const saveMenuSnapshot = async (state: MenuState): Promise<void> => {
+export const saveMenuSnapshot = async (state: MenuState): Promise<boolean> => {
   const normalized = normalizeMenuState({ ...state, updatedAt: new Date().toISOString() });
   saveLocalMenu(normalized);
 
   if (!supabase) {
-    return;
+    return true;
   }
 
   queuedSnapshot = normalized;
 
   if (saveInProgress) {
-    return;
+    return true;
   }
 
   saveInProgress = true;
+  let success = false;
 
   try {
     while (queuedSnapshot) {
       const nextSnapshot = queuedSnapshot;
       queuedSnapshot = null;
-      await persistMenuSnapshot(nextSnapshot);
+      success = await persistMenuSnapshot(nextSnapshot);
+      if (!success) {
+        break;
+      }
     }
   } finally {
     saveInProgress = false;
   }
+
+  return success;
 };

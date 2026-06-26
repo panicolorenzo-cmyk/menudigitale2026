@@ -283,5 +283,5 @@ export const demoMenu: MenuState = {
   restaurants: demoRestaurants,
   categories: demoCategories,
   dishes: demoDishes,
-  updatedAt: new Date().toISOString()
+  updatedAt: '2025-01-01T00:00:00.000Z'
 };

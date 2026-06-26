@@ -13,7 +13,7 @@ import {
   Utensils,
   X
 } from 'lucide-react';
-import { hasSupabaseConfig, uploadMenuImage } from '../lib/supabase';
+import { hasSupabaseConfig, saveMenuSnapshot, uploadMenuImage } from '../lib/supabase';
 import { txt } from '../lib/text';
 import { LANGUAGES, type Category, type Dish, type LanguageCode, type MenuState, type Restaurant, type ServiceType, type TranslatedText } from '../types';
 import { QRCodeCanvas } from './QRCodeCanvas';
@@ -129,6 +129,8 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
 
   const [categoryDraft, setCategoryDraft] = useState<Category>(() => blankCategory());
   const [dishDraft, setDishDraft] = useState<Dish>(() => blankDish());
+  const [saveDishStatus, setSaveDishStatus] = useState<null | 'saving' | 'saved' | 'error'>(null);
+  const [saveCategoryStatus, setSaveCategoryStatus] = useState<null | 'saving' | 'saved' | 'error'>(null);
 
   useEffect(() => {
     setCategoryDraft(blankCategory());
@@ -154,17 +156,24 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
       sortOrder: Number(categoryDraft.sortOrder) || restaurantCategories.length * 10 + 10
     };
 
-    onUpdate((currentState) => {
-      const exists = currentState.categories.some((category) => category.id === normalized.id && category.restaurantId === restaurant.id);
+    const nextState = (currentState: MenuState): MenuState => {
+      const exists = currentState.categories.some((c) => c.id === normalized.id && c.restaurantId === restaurant.id);
       const categories = exists
-        ? currentState.categories.map((category) =>
-            category.id === normalized.id && category.restaurantId === restaurant.id ? normalized : category
+        ? currentState.categories.map((c) =>
+            c.id === normalized.id && c.restaurantId === restaurant.id ? normalized : c
           )
         : [...currentState.categories, normalized];
-
       return { ...currentState, categories };
-    });
+    };
+
+    onUpdate(nextState);
     setCategoryDraft(blankCategory());
+
+    setSaveCategoryStatus('saving');
+    void saveMenuSnapshot(nextState(state)).then((ok) => {
+      setSaveCategoryStatus(ok ? 'saved' : 'error');
+      if (ok) window.setTimeout(() => setSaveCategoryStatus(null), 2000);
+    });
   };
 
   const deleteCategory = (category: Category) => {
@@ -205,17 +214,24 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
       image
     };
 
-    onUpdate((currentState) => {
-      const exists = currentState.dishes.some((dish) => dish.id === normalized.id && dish.restaurantId === restaurant.id);
+    const nextState = (currentState: MenuState): MenuState => {
+      const exists = currentState.dishes.some((d) => d.id === normalized.id && d.restaurantId === restaurant.id);
       const dishes = exists
-        ? currentState.dishes.map((dish) =>
-            dish.id === normalized.id && dish.restaurantId === restaurant.id ? { ...dish, ...normalized } : dish
+        ? currentState.dishes.map((d) =>
+            d.id === normalized.id && d.restaurantId === restaurant.id ? { ...d, ...normalized } : d
           )
         : [...currentState.dishes, normalized];
-
       return { ...currentState, dishes };
-    });
+    };
+
+    onUpdate(nextState);
     setDishDraft(blankDish(normalized.categoryId));
+
+    setSaveDishStatus('saving');
+    void saveMenuSnapshot(nextState(state)).then((ok) => {
+      setSaveDishStatus(ok ? 'saved' : 'error');
+      if (ok) window.setTimeout(() => setSaveDishStatus(null), 2000);
+    });
   };
 
   const toggleDish = (dish: Dish) => {
@@ -409,10 +425,12 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                       className="h-5 w-5 accent-gold"
                     />
                   </label>
-                  <button type="button" onClick={saveDish} className="admin-primary-button w-full justify-center sm:w-auto">
+                  <button type="button" onClick={saveDish} disabled={saveDishStatus === 'saving'} className="admin-primary-button w-full justify-center sm:w-auto">
                     <Save className="h-4 w-4" />
-                    {txt(language, 'save')}
+                    {saveDishStatus === 'saving' ? 'Salvataggio...' : txt(language, 'save')}
                   </button>
+                  {saveDishStatus === 'saved' && <p className="text-xs text-green-400">Salvato su Supabase</p>}
+                  {saveDishStatus === 'error' && <p className="text-xs text-red-400">Errore salvataggio Supabase — verifica connessione</p>}
                 </div>
               </div>
 
@@ -491,10 +509,12 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                       className="h-5 w-5 accent-gold"
                     />
                   </label>
-                  <button type="button" onClick={saveCategory} className="admin-primary-button w-full justify-center sm:w-auto">
+                  <button type="button" onClick={saveCategory} disabled={saveCategoryStatus === 'saving'} className="admin-primary-button w-full justify-center sm:w-auto">
                     <Save className="h-4 w-4" />
-                    {txt(language, 'save')}
+                    {saveCategoryStatus === 'saving' ? 'Salvataggio...' : txt(language, 'save')}
                   </button>
+                  {saveCategoryStatus === 'saved' && <p className="text-xs text-green-400">Salvato su Supabase</p>}
+                  {saveCategoryStatus === 'error' && <p className="text-xs text-red-400">Errore salvataggio Supabase — verifica connessione</p>}
                 </div>
               </div>
 
