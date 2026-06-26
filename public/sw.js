@@ -1,6 +1,5 @@
-const CACHE_NAME = 'menu-digitale-2026-v1';
+const CACHE_NAME = 'menu-digitale-2026-v2';
 const APP_SHELL = [
-  '/',
   '/index.html',
   '/manifest.webmanifest',
   '/icons/icon.svg',
@@ -27,6 +26,12 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('fetch', (event) => {
   const request = event.request;
 
@@ -34,23 +39,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) {
-        return cached;
-      }
-
-      return fetch(request)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
         .then((response) => {
-          if (!response || response.status !== 200 || response.type === 'opaque') {
-            return response;
-          }
-
           const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseToCache));
+          caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', responseToCache));
           return response;
         })
-        .catch(() => caches.match('/index.html'));
-    })
+        .catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (!response || response.status !== 200 || response.type === 'opaque') {
+          return response;
+        }
+
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, responseToCache));
+        return response;
+      })
+      .catch(() =>
+        caches.match(request).then((cached) => cached || Response.error())
+      )
   );
 });

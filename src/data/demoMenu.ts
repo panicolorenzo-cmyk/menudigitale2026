@@ -1,11 +1,12 @@
 import type { Category, Dish, MenuState, Restaurant, TranslatedText } from '../types';
 
-const t = (it: string, en: string, fr: string, de: string, es: string): TranslatedText => ({
+const t = (it: string, en: string, fr: string, de: string, es: string, ru?: string): TranslatedText => ({
   it,
   en,
   fr,
   de,
-  es
+  es,
+  ru: ru ?? en
 });
 
 export const demoRestaurants: Restaurant[] = [

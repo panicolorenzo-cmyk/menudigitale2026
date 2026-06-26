@@ -14,8 +14,8 @@ export default {
         'gold-soft': '#ead09a'
       },
       fontFamily: {
-        display: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'sans-serif']
+        display: ['Bodoni Moda', 'Didot', 'Times New Roman', 'serif'],
+        sans: ['Montserrat', 'Avenir Next', 'Segoe UI', 'sans-serif']
       },
       boxShadow: {
         glow: '0 24px 80px rgba(0, 0, 0, 0.35)',

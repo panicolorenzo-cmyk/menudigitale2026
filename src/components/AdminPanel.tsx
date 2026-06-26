@@ -26,13 +26,11 @@ interface AdminPanelProps {
   onUpdate: (state: MenuState) => void;
 }
 
-const emptyTranslatedText = (): TranslatedText => ({
-  it: '',
-  en: '',
-  fr: '',
-  de: '',
-  es: ''
-});
+const emptyTranslatedText = (): TranslatedText =>
+  LANGUAGES.reduce((accumulator, language) => {
+    accumulator[language.code] = '';
+    return accumulator;
+  }, {} as TranslatedText);
 
 const normalizeText = (value: TranslatedText, fallback = 'Senza nome'): TranslatedText => {
   const firstValue = LANGUAGES.map((language) => value[language.code]).find(Boolean) ?? fallback;
@@ -100,10 +98,13 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
     sortOrder: restaurantCategories.length * 10 + 10
   });
 
-  const blankDish = (): Dish => ({
+  const getValidCategoryId = (categoryId?: string) =>
+    restaurantCategories.some((category) => category.id === categoryId) ? categoryId ?? '' : restaurantCategories[0]?.id ?? '';
+
+  const blankDish = (categoryId?: string): Dish => ({
     id: '',
     restaurantId: restaurant.id,
-    categoryId: restaurantCategories[0]?.id ?? '',
+    categoryId: getValidCategoryId(categoryId),
     name: emptyTranslatedText(),
     description: emptyTranslatedText(),
     allergens: [],
@@ -119,6 +120,14 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
     setCategoryDraft(blankCategory());
     setDishDraft(blankDish());
   }, [restaurant.id]);
+
+  useEffect(() => {
+    setDishDraft((current) => ({
+      ...current,
+      restaurantId: restaurant.id,
+      categoryId: getValidCategoryId(current.categoryId)
+    }));
+  }, [restaurant.id, restaurantCategories]);
 
   const saveCategory = () => {
     const normalized: Category = {
@@ -156,7 +165,7 @@ export function AdminPanel({ state, restaurant, language, onClose, onUpdate }: A
       : [...state.dishes, normalized];
 
     onUpdate({ ...state, dishes });
-    setDishDraft(blankDish());
+    setDishDraft(blankDish(normalized.categoryId));
   };
 
   const toggleDish = (dish: Dish) => {

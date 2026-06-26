@@ -1,14 +1,16 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { MenuState } from '../types';
-import { loadLocalMenu, saveLocalMenu } from './localMenu';
+import { isMenuState, loadLocalMenu, normalizeMenuState, saveLocalMenu } from './localMenu';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
-export const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey);
+const isConfiguredValue = (value: string | undefined) => Boolean(value && !value.startsWith('INSERIRE_'));
+
+export const hasSupabaseConfig = isConfiguredValue(supabaseUrl) && isConfiguredValue(supabaseAnonKey);
 
 const createSupabaseClient = (): SupabaseClient | null => {
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!hasSupabaseConfig || !supabaseUrl || !supabaseAnonKey) {
     return null;
   }
 
@@ -17,24 +19,25 @@ const createSupabaseClient = (): SupabaseClient | null => {
 
 export const supabase: SupabaseClient | null = createSupabaseClient();
 
-const SNAPSHOT_ID = 'menu-digitale-2026';
+const SNAPSHOT_ID = 'main';
 
 export const loadMenuSnapshot = async (): Promise<MenuState> => {
   if (!supabase) {
     return loadLocalMenu();
   }
 
-  const { data, error } = await supabase
-    .from('menu_state')
-    .select('payload')
-    .eq('id', SNAPSHOT_ID)
-    .maybeSingle();
+  const { data, error } = await supabase.from('menu_state').select('payload').eq('id', SNAPSHOT_ID).maybeSingle();
 
-  if (error || !data?.payload) {
+  if (error || !isMenuState(data?.payload)) {
+    if (error) {
+      console.warn('Supabase load failed, using local menu fallback.', error.message);
+    }
     return loadLocalMenu();
   }
 
-  return data.payload as MenuState;
+  const normalized = normalizeMenuState(data.payload);
+  saveLocalMenu(normalized);
+  return normalized;
 };
 
 export const saveMenuSnapshot = async (state: MenuState): Promise<void> => {
@@ -44,9 +47,13 @@ export const saveMenuSnapshot = async (state: MenuState): Promise<void> => {
     return;
   }
 
-  await supabase.from('menu_state').upsert({
+  const { error } = await supabase.from('menu_state').upsert({
     id: SNAPSHOT_ID,
     payload: { ...state, updatedAt: new Date().toISOString() },
     updated_at: new Date().toISOString()
   });
+
+  if (error) {
+    console.warn('Supabase save failed, data kept locally.', error.message);
+  }
 };

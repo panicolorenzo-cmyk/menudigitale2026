@@ -7,7 +7,8 @@ const localeMap: Record<LanguageCode, string> = {
   en: 'en-US',
   fr: 'fr-FR',
   de: 'de-DE',
-  es: 'es-ES'
+  es: 'es-ES',
+  ru: 'ru-RU'
 };
 
 interface DishCardProps {

@@ -1,14 +1,16 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Lock, Search, ShieldCheck } from 'lucide-react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, Lock, ShieldCheck } from 'lucide-react';
 import { AdminPanel } from './components/AdminPanel';
 import { DishCard } from './components/DishCard';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
+import locanda22IntroLogoSvg from './generated/locanda22IntroLogo.svg?raw';
 import { loadLocalMenu } from './lib/localMenu';
 import { loadMenuSnapshot, saveMenuSnapshot } from './lib/supabase';
-import { allergenText, txt } from './lib/text';
+import { txt } from './lib/text';
 import { LANGUAGES, type Category, type Dish, type LanguageCode, type MenuState, type Restaurant, type RestaurantId } from './types';
 
 const PIN_DEMO = '2222';
+const LANDING_INTRO_TOTAL_MS = 13000;
 
 const isLanguageCode = (value: string | null): value is LanguageCode =>
   Boolean(value && LANGUAGES.some((language) => language.code === value));
@@ -68,6 +70,7 @@ export default function App() {
   const [adminMode, setAdminMode] = useState(() => isAdminRoute());
   const [adminOpen, setAdminOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
+  const [snapshotLoaded, setSnapshotLoaded] = useState(false);
   const [adminUnlocked, setAdminUnlocked] = useState(() => {
     if (typeof window === 'undefined') {
       return false;
@@ -80,6 +83,11 @@ export default function App() {
     void loadMenuSnapshot().then((loadedState) => {
       if (isActive) {
         setMenuState(loadedState);
+        setSnapshotLoaded(true);
+      }
+    }).catch(() => {
+      if (isActive) {
+        setSnapshotLoaded(true);
       }
     });
 
@@ -99,12 +107,16 @@ export default function App() {
   }, [selectedRestaurantId]);
 
   useEffect(() => {
+    if (!snapshotLoaded) {
+      return;
+    }
+
     const saveTimer = window.setTimeout(() => {
       void saveMenuSnapshot(menuState);
     }, 300);
 
     return () => window.clearTimeout(saveTimer);
-  }, [menuState]);
+  }, [menuState, snapshotLoaded]);
 
   const restaurant = useMemo(
     () => menuState.restaurants.find((item) => item.id === selectedRestaurantId) ?? null,
@@ -158,15 +170,13 @@ export default function App() {
 
   if (!restaurant) {
     return (
-      <>
-        <Landing
-          restaurants={menuState.restaurants}
-          language={language}
-          adminMode={adminMode}
-          onLanguageChange={setLanguage}
-          onSelectRestaurant={setSelectedRestaurantId}
-        />
-      </>
+      <Landing
+        restaurants={menuState.restaurants}
+        language={language}
+        adminMode={adminMode}
+        onLanguageChange={setLanguage}
+        onSelectRestaurant={setSelectedRestaurantId}
+      />
     );
   }
 
@@ -241,52 +251,175 @@ interface LandingProps {
 }
 
 function Landing({ restaurants, language, adminMode = false, onLanguageChange, onSelectRestaurant }: LandingProps) {
-  const hero = restaurants[0];
+  const [introReady, setIntroReady] = useState(() => adminMode);
+  const introEnabled = !adminMode;
+  const sectionClass = adminMode ? 'justify-end' : 'justify-start';
+  const headingWrapClass = adminMode
+    ? 'max-w-3xl animate-fadeUp'
+    : 'mt-[clamp(3.85rem,6.9vh,5.6rem)] max-w-[22rem] sm:mt-[7.1rem] sm:max-w-[30rem]';
+  const headingClass = adminMode
+    ? 'font-display text-[clamp(2.7rem,13vw,5rem)] leading-[0.92] text-cream sm:text-7xl'
+    : 'max-w-[18.75rem] font-display text-[clamp(3.45rem,14.2vw,5.65rem)] leading-[0.9] text-cream sm:max-w-[25rem] sm:text-[clamp(4.7rem,8vw,6.5rem)]';
+  const cardsWrapClass = adminMode
+    ? 'mt-5 grid gap-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] sm:mt-8 md:grid-cols-2'
+    : 'mt-8 grid gap-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] sm:mt-10 md:grid-cols-2 md:gap-5';
+  const languageWrapClass = adminMode
+    ? 'absolute inset-x-0 top-0 z-30 flex justify-end px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:px-8 sm:pt-5'
+    : `absolute inset-x-0 top-0 z-30 flex justify-end px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:px-8 sm:pt-5 landing-language-intro ${introReady ? 'pointer-events-auto' : 'pointer-events-none'}`;
+  const publicCardsWrapClass = introEnabled
+    ? `${cardsWrapClass} ${introReady ? 'pointer-events-auto' : 'pointer-events-none'}`
+    : cardsWrapClass;
+
+  useEffect(() => {
+    if (adminMode || typeof window === 'undefined') {
+      setIntroReady(true);
+      return;
+    }
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setIntroReady(true);
+      return;
+    }
+
+    setIntroReady(false);
+    const timer = window.setTimeout(() => {
+      setIntroReady(true);
+    }, LANDING_INTRO_TOTAL_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [adminMode]);
 
   return (
-    <main className="relative min-h-[100svh] overflow-hidden bg-ink text-cream">
-      <img src={hero?.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-ink/45 to-ink" />
-      <div className="absolute inset-x-0 top-0 z-10 flex justify-center px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:justify-end sm:px-8 sm:pt-5">
+    <main className="relative min-h-[100svh] overflow-hidden bg-[#0b0907] text-cream">
+      {adminMode ? <img src={restaurants[0]?.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" /> : null}
+      <div
+        className={
+          adminMode
+            ? 'absolute inset-0 bg-gradient-to-b from-black/70 via-ink/45 to-ink'
+            : 'absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(197,164,106,0.08),transparent_22rem),linear-gradient(180deg,#090806_0%,#100d0a_55%,#15110d_100%)]'
+        }
+      />
+      {introEnabled ? <Locanda22IntroLogo /> : null}
+      <div className={languageWrapClass}>
         <LanguageSwitcher value={language} onChange={onLanguageChange} compact />
       </div>
 
-      <section className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-6xl flex-col justify-end px-3 pb-5 pt-24 sm:px-8 sm:pb-8 sm:pt-28">
-        <div className="max-w-3xl animate-fadeUp">
-          <p className="mb-3 text-xs font-semibold uppercase text-gold-soft">
-            {adminMode ? txt(language, 'adminArea') : 'Menu Digitale 2026'}
-          </p>
-          <h1 className="font-display text-[clamp(2.7rem,13vw,5rem)] leading-[0.92] text-cream sm:text-7xl">
-            {adminMode ? txt(language, 'admin') : 'Locanda 22 & Adelardi'}
+      <section className={`relative z-10 mx-auto flex min-h-[100svh] w-full max-w-6xl flex-col px-3 pb-4 pt-[calc(env(safe-area-inset-top)+4.55rem)] sm:px-8 sm:pb-8 sm:pt-28 ${sectionClass}`}>
+        <div className={headingWrapClass}>
+          {adminMode ? <p className="mb-3 text-xs font-semibold uppercase text-gold-soft">{txt(language, 'adminArea')}</p> : null}
+          <h1 className={headingClass}>
+            {adminMode ? (
+              txt(language, 'admin')
+            ) : (
+              <>
+                <span className="hero-title-line hero-title-line-1 block">{txt(language, 'chooseExperienceLine1')}</span>
+                <span className="hero-title-line hero-title-line-2 block">{txt(language, 'chooseExperienceLine2')}</span>
+                <span className="hero-title-line hero-title-line-3 block">{txt(language, 'chooseExperienceLine3')}</span>
+              </>
+            )}
           </h1>
-          <p className="mt-4 max-w-xl text-base leading-7 text-cream/80 sm:mt-5 sm:text-lg">
-            {adminMode ? txt(language, 'chooseAdminVenue') : txt(language, 'chooseVenue')}
-          </p>
+          {adminMode ? (
+            <p className="mt-4 max-w-xl text-base leading-7 text-cream/80 sm:mt-5 sm:text-lg">{txt(language, 'chooseAdminVenue')}</p>
+          ) : null}
         </div>
 
-        <div className="mt-5 grid gap-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] sm:mt-8 md:grid-cols-2">
+        <div className={publicCardsWrapClass}>
           {restaurants.map((restaurant, index) => (
-            <button
+            <LandingCard
               key={restaurant.id}
-              type="button"
-              onClick={() => onSelectRestaurant(restaurant.id)}
-              className="group relative min-h-[9.25rem] overflow-hidden rounded-[1.35rem] border border-white/15 bg-taupe text-left shadow-glow transition duration-300 hover:-translate-y-1 hover:border-gold/60 sm:min-h-48 sm:rounded-[1.75rem]"
-              style={{ animationDelay: `${index * 90}ms` }}
-            >
-              <img src={restaurant.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-              <div className="relative flex h-full min-h-[9.25rem] flex-col justify-end p-4 sm:min-h-48 sm:p-5">
-                <p className="text-xs font-semibold uppercase text-gold-soft">
-                  {adminMode ? txt(language, 'manageMenu') : txt(language, 'openMenu')}
-                </p>
-                <h2 className="mt-1 font-display text-3xl sm:text-4xl">{restaurant.name}</h2>
-                <p className="mt-2 max-w-md text-sm leading-5 text-cream/75 sm:mt-3 sm:leading-6">{restaurant.subtitle[language]}</p>
-              </div>
-            </button>
+              restaurant={restaurant}
+              language={language}
+              adminMode={adminMode}
+              index={index}
+              onSelect={() => onSelectRestaurant(restaurant.id)}
+            />
           ))}
         </div>
       </section>
     </main>
+  );
+}
+
+function Locanda22IntroLogo() {
+  return (
+    <div aria-hidden="true" className="landing-intro-logo-shell">
+      <div dangerouslySetInnerHTML={{ __html: locanda22IntroLogoSvg }} />
+    </div>
+  );
+}
+
+interface LandingCardProps {
+  restaurant: Restaurant;
+  language: LanguageCode;
+  adminMode: boolean;
+  index: number;
+  onSelect: () => void;
+}
+
+function LandingCard({ restaurant, language, adminMode, index, onSelect }: LandingCardProps) {
+  const publicExperience =
+    restaurant.id === 'locanda22'
+      ? {
+          image: '/images/cucina-card.jpg',
+          title: txt(language, 'diningTitle'),
+          description: txt(language, 'diningDescription')
+        }
+      : {
+          image: restaurant.heroImage,
+          title: txt(language, 'aperitivoTitle'),
+          description: txt(language, 'aperitivoDescription')
+        };
+  const eyebrow = adminMode ? txt(language, 'manageMenu') : null;
+  const image = adminMode ? restaurant.heroImage : publicExperience.image;
+  const title = adminMode ? restaurant.name : publicExperience.title;
+  const description = adminMode ? restaurant.subtitle[language] : publicExperience.description;
+  const cardClass = adminMode
+    ? 'group relative min-h-[10rem] overflow-hidden rounded-[1.6rem] border border-white/15 bg-taupe text-left shadow-glow transition duration-300 hover:-translate-y-1 hover:border-gold/60 sm:min-h-52 sm:rounded-[1.9rem]'
+    : 'group relative h-[11.5rem] overflow-hidden rounded-[1.75rem] border border-white/15 bg-taupe text-left shadow-glow transition duration-300 hover:-translate-y-1 hover:border-gold/60 sm:h-[17rem] sm:rounded-[2rem]';
+  const titleClass = adminMode
+    ? 'mt-3 font-display text-3xl sm:text-4xl'
+    : 'landing-card-title whitespace-nowrap font-display text-[clamp(2.8rem,10vw,4.1rem)] leading-[0.9] text-cream sm:text-[clamp(3.35rem,5.6vw,4.65rem)]';
+  const descriptionClass = adminMode
+    ? 'mt-2 max-w-md text-sm leading-5 text-cream/75 sm:mt-3 sm:leading-6'
+    : 'landing-card-copy mt-3 max-w-[15.5rem] text-[0.92rem] leading-5 text-cream sm:max-w-[18.5rem] sm:text-[0.98rem] sm:leading-6';
+  const contentClass = adminMode
+    ? 'relative flex h-full flex-col justify-end p-4 sm:min-h-52 sm:p-5'
+    : 'relative flex h-full flex-col justify-end p-4 sm:p-5';
+  const titleWrapClass = adminMode ? '' : 'min-h-[3.6rem] sm:min-h-[4.35rem]';
+  const introClass = adminMode
+    ? ''
+    : index === 0
+      ? 'landing-card-intro landing-card-intro-left'
+      : 'landing-card-intro landing-card-intro-right';
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`${cardClass} ${introClass}`}
+    >
+      <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/24 to-black/92" />
+      {!adminMode ? <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_24%,rgba(0,0,0,0.16)_48%,rgba(8,6,5,0.72)_78%,rgba(8,6,5,0.94)_100%)]" /> : null}
+      <div className={contentClass}>
+        {eyebrow ? (
+          <div>
+            <p className="inline-flex rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-gold-soft backdrop-blur-sm sm:text-xs">
+              {eyebrow}
+            </p>
+          </div>
+        ) : null}
+        <div>
+          <div className={titleWrapClass}>
+            <h2 className={titleClass}>{title}</h2>
+          </div>
+          {!adminMode ? <div className="mt-2 h-px w-10 bg-gold/60" /> : null}
+          <p className={descriptionClass}>{description}</p>
+        </div>
+      </div>
+    </button>
   );
 }
 
@@ -299,8 +432,16 @@ interface MenuExperienceProps {
 }
 
 function MenuExperience({ state, restaurant, language, onLanguageChange, onChangeRestaurant }: MenuExperienceProps) {
-  const [query, setQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const categoryBarRef = useRef<HTMLDivElement | null>(null);
+  const categoryScrollerRef = useRef<HTMLDivElement | null>(null);
+  const categoryScrollAnimationRef = useRef<number | null>(null);
+  const sectionRefs = useRef(new Map<string, HTMLElement | null>());
+  const buttonRefs = useRef(new Map<string, HTMLButtonElement | null>());
+  const showAdelardiFoodLogo = restaurant.id === 'locanda22' || restaurant.id === 'adelardi';
+  const showHeroDescription = restaurant.id === 'adelardi';
+  const publicTitle = restaurant.id === 'locanda22' ? 'Adelardi' : restaurant.name;
+  const publicSubtitle = restaurant.id === 'locanda22' ? 'Pizza e food' : restaurant.subtitle[language];
 
   const restaurantCategories = useMemo(
     () =>
@@ -323,49 +464,212 @@ function MenuExperience({ state, restaurant, language, onLanguageChange, onChang
     [activeCategoryIds, restaurant.id, state.dishes]
   );
 
-  const visibleDishes = useMemo(() => {
-    const search = query.trim().toLowerCase();
-
-    return dishes.filter((dish) => {
-      const inCategory = selectedCategory === 'all' || dish.categoryId === selectedCategory;
-      if (!inCategory) {
-        return false;
-      }
-
-      if (!search) {
-        return true;
-      }
-
-      const haystack = [
-        dish.name[language],
-        dish.description[language],
-        ...dish.allergens.map((allergen) => allergenText(allergen, language))
-      ]
-        .join(' ')
-        .toLowerCase();
-
-      return haystack.includes(search);
-    });
-  }, [dishes, language, query, selectedCategory]);
-
   const categoryById = useMemo(
     () => restaurantCategories.reduce((accumulator, category) => accumulator.set(category.id, category), new Map<string, Category>()),
     [restaurantCategories]
   );
 
-  const categoriesWithDishes = restaurantCategories.filter((category) =>
-    category.active && dishes.some((dish) => dish.categoryId === category.id)
+  const categoriesWithDishes = useMemo(
+    () => restaurantCategories.filter((category) => category.active && dishes.some((dish) => dish.categoryId === category.id)),
+    [dishes, restaurantCategories]
+  );
+
+  const dishSections = useMemo(
+    () =>
+      categoriesWithDishes.map((category) => ({
+        category,
+        dishes: dishes.filter((dish) => dish.categoryId === category.id)
+      })),
+    [categoriesWithDishes, dishes]
   );
 
   useEffect(() => {
-    if (selectedCategory !== 'all' && !categoriesWithDishes.some((category) => category.id === selectedCategory)) {
-      setSelectedCategory('all');
+    if (categoriesWithDishes.length === 0) {
+      if (selectedCategory !== '') {
+        setSelectedCategory('');
+      }
+      return;
+    }
+
+    if (!categoriesWithDishes.some((category) => category.id === selectedCategory)) {
+      setSelectedCategory(categoriesWithDishes[0].id);
     }
   }, [categoriesWithDishes, selectedCategory]);
 
+  const alignCategoryToLeft = useCallback((categoryId: string, behavior: ScrollBehavior = 'smooth') => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const scroller = categoryScrollerRef.current;
+    const activeButton = buttonRefs.current.get(categoryId);
+    const section = sectionRefs.current.get(categoryId);
+
+    if (!scroller || !activeButton) {
+      return;
+    }
+
+    const scrollerRect = scroller.getBoundingClientRect();
+    const firstCard = section?.querySelector('article');
+    const cardRect = firstCard?.getBoundingClientRect();
+    const cardLeft = cardRect?.left ?? scrollerRect.left;
+    const leftInset = Math.max(cardLeft - scrollerRect.left, 0);
+    const trailingInset = Math.max(scroller.clientWidth - activeButton.offsetWidth - leftInset + 8, 0);
+
+    scroller.style.paddingLeft = '0px';
+    scroller.style.paddingRight = `${trailingInset}px`;
+
+    window.requestAnimationFrame(() => {
+      const maxScrollLeft = scroller.scrollWidth - scroller.clientWidth;
+      const currentDelta = activeButton.getBoundingClientRect().left - cardLeft;
+      const targetScrollLeft = Math.max(
+        0,
+        Math.min(scroller.scrollLeft + currentDelta, maxScrollLeft)
+      );
+
+      if (Math.abs(scroller.scrollLeft - targetScrollLeft) > 2) {
+        if (behavior === 'auto') {
+          scroller.scrollLeft = targetScrollLeft;
+          return;
+        }
+
+        if (categoryScrollAnimationRef.current) {
+          window.cancelAnimationFrame(categoryScrollAnimationRef.current);
+        }
+
+        const startScrollLeft = scroller.scrollLeft;
+        const distance = targetScrollLeft - startScrollLeft;
+        const duration = window.innerWidth < 640 ? 420 : 320;
+        let startTime: number | null = null;
+
+        const animateScroll = (timestamp: number) => {
+          if (startTime === null) {
+            startTime = timestamp;
+          }
+
+          const progress = Math.min((timestamp - startTime) / duration, 1);
+          const easedProgress = 1 - Math.pow(1 - progress, 3);
+          scroller.scrollLeft = startScrollLeft + distance * easedProgress;
+
+          if (progress < 1) {
+            categoryScrollAnimationRef.current = window.requestAnimationFrame(animateScroll);
+            return;
+          }
+
+          scroller.scrollLeft = targetScrollLeft;
+          categoryScrollAnimationRef.current = null;
+        };
+
+        categoryScrollAnimationRef.current = window.requestAnimationFrame(animateScroll);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!selectedCategory) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      alignCategoryToLeft(selectedCategory, 'smooth');
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [alignCategoryToLeft, selectedCategory]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !selectedCategory) {
+      return;
+    }
+
+    const refreshAlignment = () => alignCategoryToLeft(selectedCategory, 'auto');
+    window.addEventListener('resize', refreshAlignment);
+
+    return () => {
+      window.removeEventListener('resize', refreshAlignment);
+    };
+  }, [alignCategoryToLeft, selectedCategory]);
+
+  useEffect(() => {
+    return () => {
+      if (categoryScrollAnimationRef.current) {
+        window.cancelAnimationFrame(categoryScrollAnimationRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || dishSections.length === 0) {
+      return;
+    }
+
+    const updateActiveCategory = () => {
+      const stickyOffset =
+        window.innerWidth < 640
+          ? Math.min(Math.max(window.innerHeight * 0.34, 220), 300)
+          : (categoryBarRef.current?.offsetHeight ?? 0) + 20;
+      const firstSection = sectionRefs.current.get(dishSections[0].category.id);
+
+      if (!firstSection) {
+        return;
+      }
+
+      const firstSectionTop = firstSection.getBoundingClientRect().top;
+      if (firstSectionTop > stickyOffset) {
+        const firstCategoryId = dishSections[0].category.id;
+        setSelectedCategory((current) => (current === firstCategoryId ? current : firstCategoryId));
+        return;
+      }
+
+      let nextCategory = dishSections[0].category.id;
+
+      for (const section of dishSections) {
+        const element = sectionRefs.current.get(section.category.id);
+        if (!element) {
+          continue;
+        }
+
+        if (element.getBoundingClientRect().top - stickyOffset <= 0) {
+          nextCategory = section.category.id;
+        } else {
+          break;
+        }
+      }
+
+      setSelectedCategory((current) => (current === nextCategory ? current : nextCategory));
+    };
+
+    updateActiveCategory();
+    window.addEventListener('scroll', updateActiveCategory, { passive: true });
+    window.addEventListener('resize', updateActiveCategory);
+
+    return () => {
+      window.removeEventListener('scroll', updateActiveCategory);
+      window.removeEventListener('resize', updateActiveCategory);
+    };
+  }, [dishSections]);
+
+  const scrollToCategory = (categoryId: string) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const stickyOffset = window.innerWidth < 640 ? 20 : (categoryBarRef.current?.offsetHeight ?? 0) + 16;
+    const target = sectionRefs.current.get(categoryId);
+
+    if (!target) {
+      return;
+    }
+
+    const top = window.scrollY + target.getBoundingClientRect().top - stickyOffset;
+    window.scrollTo({ top, behavior: 'smooth' });
+    setSelectedCategory(categoryId);
+    alignCategoryToLeft(categoryId);
+  };
+
   return (
     <main className="min-h-screen bg-coal text-cream">
-      <section className="relative flex min-h-[78svh] overflow-hidden sm:min-h-[96svh]">
+      <section className="relative flex min-h-[calc(100svh-6rem)] overflow-hidden sm:min-h-[96svh]">
         <img src={restaurant.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-ink/40 to-coal" />
 
@@ -381,49 +685,52 @@ function MenuExperience({ state, restaurant, language, onLanguageChange, onChang
           <LanguageSwitcher value={language} onChange={onLanguageChange} compact />
         </div>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col justify-end px-3 pb-7 pt-24 sm:px-8 sm:pb-10 sm:pt-28">
-          <div className="max-w-3xl animate-fadeUp">
-            <p className="mb-3 text-xs font-semibold uppercase text-gold-soft">Menu Digitale 2026</p>
-            <h1 className="font-display text-[clamp(3.2rem,18vw,6rem)] leading-[0.9] sm:text-8xl">{restaurant.name}</h1>
-            <p className="mt-4 max-w-2xl text-[0.95rem] leading-6 text-cream/80 sm:mt-5 sm:text-xl sm:leading-8">
-              {restaurant.subtitle[language]}
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col justify-start px-3 pb-8 pt-[calc(env(safe-area-inset-top)+4.35rem)] sm:justify-end sm:px-8 sm:pb-10 sm:pt-28">
+          <div className={`${showAdelardiFoodLogo ? 'max-w-[24rem]' : 'max-w-3xl'} animate-fadeUp`}>
+            {showAdelardiFoodLogo ? (
+              <>
+                <img
+                  src="/images/adelardi-logo.png"
+                  alt="Adelardi Pizza & Food"
+                  className="block w-[90%] max-w-[21.75rem] origin-left sm:w-[34rem] sm:max-w-full"
+                />
+                {showHeroDescription ? (
+                  <p className="mt-5 max-w-[22rem] text-[0.95rem] leading-6 text-cream/80 sm:mt-6 sm:max-w-2xl sm:text-xl sm:leading-8">
+                    {restaurant.subtitle[language]}
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <h1 className="font-display text-[clamp(3.2rem,18vw,6rem)] leading-[0.9] sm:text-8xl">{publicTitle}</h1>
+                <p className="mt-4 max-w-2xl text-[0.95rem] leading-6 text-cream/80 sm:mt-5 sm:text-xl sm:leading-8">
+                  {publicSubtitle}
+                </p>
+              </>
+            )}
+            <p className={`${showHeroDescription ? 'mt-5 sm:mt-6' : showAdelardiFoodLogo ? 'mt-7' : 'mt-3 sm:mt-4'} text-sm leading-5 text-cream/60`}>
+              {restaurant.address}
             </p>
-            <p className="mt-3 text-sm leading-5 text-cream/60 sm:mt-4">{restaurant.address}</p>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] sm:mt-8">
-            <a href="#menu" className="rounded-full bg-gold px-6 py-3.5 text-sm font-bold uppercase text-ink shadow-gold transition hover:bg-gold-soft">
-              {txt(language, 'menu')}
-            </a>
-          </div>
+          <div className="pb-[calc(env(safe-area-inset-bottom)+0.25rem)]" />
         </div>
       </section>
 
-      <section id="menu" className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-8 sm:py-10">
-        <div className="sticky top-0 z-30 -mx-3 border-y border-white/10 bg-coal/95 px-3 py-3 backdrop-blur-xl sm:-mx-8 sm:px-8 sm:py-4">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-gold sm:h-5 sm:w-5" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              className="w-full rounded-full border border-white/10 bg-taupe px-11 py-3.5 text-[0.95rem] text-cream outline-none transition placeholder:text-muted/60 focus:border-gold/70 sm:px-12 sm:py-4 sm:text-base"
-              placeholder={txt(language, 'search')}
-            />
-          </div>
-
-          <div className="mobile-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1 sm:mt-4">
-            <button
-              type="button"
-              onClick={() => setSelectedCategory('all')}
-              className={`category-chip ${selectedCategory === 'all' ? 'category-chip-active' : ''}`}
-            >
-              {txt(language, 'all')}
-            </button>
+      <section id="menu" className="mx-auto w-full max-w-6xl px-3 py-0 sm:px-8 sm:py-10">
+        <div
+          ref={categoryBarRef}
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-white/8 bg-black px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 shadow-[0_-20px_45px_rgba(0,0,0,0.58)] sm:sticky sm:top-0 sm:bottom-auto sm:z-30 sm:-mx-8 sm:border-y sm:border-white/10 sm:bg-coal/95 sm:px-8 sm:py-4 sm:shadow-none sm:backdrop-blur-xl"
+        >
+          <div ref={categoryScrollerRef} className="mobile-scrollbar flex gap-2 overflow-x-auto pb-1">
             {categoriesWithDishes.map((category) => (
               <button
                 key={category.id}
+                ref={(element) => {
+                  buttonRefs.current.set(category.id, element);
+                }}
                 type="button"
-                onClick={() => setSelectedCategory(category.id)}
+                onClick={() => scrollToCategory(category.id)}
                 className={`category-chip ${selectedCategory === category.id ? 'category-chip-active' : ''}`}
               >
                 {category.name[language]}
@@ -432,10 +739,22 @@ function MenuExperience({ state, restaurant, language, onLanguageChange, onChang
           </div>
         </div>
 
-        {visibleDishes.length > 0 ? (
-          <div className="grid gap-4 py-4 sm:grid-cols-2 sm:gap-5 sm:py-6 lg:grid-cols-3">
-            {visibleDishes.map((dish) => (
-              <DishCard key={dish.id} dish={dish} category={categoryById.get(dish.categoryId)} language={language} />
+        {dishSections.length > 0 ? (
+          <div className="space-y-5 pb-[calc(env(safe-area-inset-bottom)+6.75rem)] pt-4 sm:space-y-8 sm:py-6">
+            {dishSections.map(({ category, dishes: categoryDishes }) => (
+              <section
+                key={category.id}
+                ref={(element) => {
+                  sectionRefs.current.set(category.id, element);
+                }}
+                className="scroll-mt-24"
+              >
+                <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+                  {categoryDishes.map((dish) => (
+                    <DishCard key={dish.id} dish={dish} category={categoryById.get(dish.categoryId)} language={language} />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         ) : (
