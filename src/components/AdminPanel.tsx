@@ -244,6 +244,23 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
     });
   };
 
+  const deleteDish = (dish: Dish) => {
+    if (!window.confirm(`Eliminare "${dish.name[language]}"?`)) return;
+
+    const nextState = (currentState: MenuState): MenuState => ({
+      ...currentState,
+      dishes: currentState.dishes.filter((d) => !(d.id === dish.id && d.restaurantId === restaurant.id))
+    });
+
+    onUpdate(nextState);
+
+    if (dishDraft.id === dish.id) {
+      setDishDraft(blankDish(dish.categoryId));
+    }
+
+    void saveMenuSnapshot(nextState(state));
+  };
+
   const toggleCategory = (category: Category) => {
     onUpdate((currentState) => {
       const categories = currentState.categories.map((item) =>
@@ -452,6 +469,14 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                             <button type="button" onClick={() => toggleDish(dish)} className="admin-secondary-button">
                               <Power className="h-3.5 w-3.5" />
                               {dish.active ? txt(language, 'inactive') : txt(language, 'active')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteDish(dish)}
+                              className="admin-secondary-button text-red-400 hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-300"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Elimina
                             </button>
                           </div>
                         </div>
