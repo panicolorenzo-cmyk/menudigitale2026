@@ -20,7 +20,7 @@ html {
 
 @media (max-width: 639px) {
   html {
-    scroll-snap-type: y proximity;
+    scroll-snap-type: y mandatory;
     scroll-padding-top: 80px;
   }
 }
