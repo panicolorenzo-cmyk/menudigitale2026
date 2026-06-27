@@ -801,7 +801,7 @@ function MenuExperience({ state, restaurant, service, language, onLanguageChange
             </div>
 
             {dishSections.length > 0 ? (
-              <div className="space-y-5 pb-[calc(env(safe-area-inset-bottom)+6.75rem)] pt-4 sm:space-y-8 sm:py-6">
+              <div className="space-y-5 pb-[max(calc(env(safe-area-inset-bottom)_+_6.75rem),calc(100svh_-_12rem))] pt-4 sm:space-y-8 sm:py-6">
                 {dishSections.map(({ category, dishes: categoryDishes }) => (
                   <section
                     key={category.id}
