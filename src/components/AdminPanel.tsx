@@ -13,7 +13,7 @@ import {
   Utensils,
   X
 } from 'lucide-react';
-import { hasSupabaseConfig, saveMenuSnapshot, uploadMenuImage } from '../lib/supabase';
+import { hasSupabaseConfig, uploadMenuImage } from '../lib/supabase';
 import { txt } from '../lib/text';
 import { LANGUAGES, type Category, type Dish, type LanguageCode, type MenuState, type Restaurant, type ServiceType, type TranslatedText } from '../types';
 import { QRCodeCanvas } from './QRCodeCanvas';
@@ -27,6 +27,7 @@ interface AdminPanelProps {
   dataReady?: boolean;
   onClose: () => void;
   onUpdate: (state: MenuState | ((currentState: MenuState) => MenuState)) => void;
+  onSave: () => Promise<boolean>;
   onSignOut?: () => void;
 }
 
@@ -55,7 +56,7 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
 
-const makeId = (prefix: string, label: string) => `${prefix}-${slugify(label) || Date.now()}`;
+const makeId = (prefix: string, label: string) => `${prefix}-${slugify(label) || 'item'}-${Date.now().toString(36)}`;
 
 const buildRestaurantLink = (restaurantId: string) => {
   if (typeof window === 'undefined') {
@@ -73,7 +74,7 @@ const buildAdminLink = (restaurantId: string) => {
   return `${window.location.origin}/admin?locale=${restaurantId}`;
 };
 
-export function AdminPanel({ state, restaurant, language, dataReady = true, onClose, onUpdate, onSignOut }: AdminPanelProps) {
+export function AdminPanel({ state, restaurant, language, dataReady = true, onClose, onUpdate, onSave, onSignOut }: AdminPanelProps) {
   const [tab, setTab] = useState<AdminTab>('dishes');
 
   const restaurantCategories = useMemo(
@@ -170,7 +171,7 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
     setCategoryDraft(blankCategory());
 
     setSaveCategoryStatus('saving');
-    void saveMenuSnapshot(nextState(state)).then((ok) => {
+    void onSave().then((ok) => {
       setSaveCategoryStatus(ok ? 'saved' : 'error');
       if (ok) window.setTimeout(() => setSaveCategoryStatus(null), 2000);
     });
@@ -193,6 +194,8 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
     if (categoryDraft.id === category.id) {
       setCategoryDraft(blankCategory());
     }
+
+    void onSave();
   };
 
   const saveDish = () => {
@@ -228,7 +231,7 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
     setDishDraft(blankDish(normalized.categoryId));
 
     setSaveDishStatus('saving');
-    void saveMenuSnapshot(nextState(state)).then((ok) => {
+    void onSave().then((ok) => {
       setSaveDishStatus(ok ? 'saved' : 'error');
       if (ok) window.setTimeout(() => setSaveDishStatus(null), 2000);
     });
@@ -242,6 +245,8 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
 
       return { ...currentState, dishes };
     });
+
+    void onSave();
   };
 
   const deleteDish = (dish: Dish) => {
@@ -258,7 +263,7 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
       setDishDraft(blankDish(dish.categoryId));
     }
 
-    void saveMenuSnapshot(nextState(state));
+    void onSave();
   };
 
   const toggleCategory = (category: Category) => {
@@ -269,6 +274,8 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
 
       return { ...currentState, categories };
     });
+
+    void onSave();
   };
 
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {

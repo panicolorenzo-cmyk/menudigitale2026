@@ -93,6 +93,8 @@ export default function App() {
   const [adminOpen, setAdminOpen] = useState(false);
   const [supabaseAuthOpen, setSupabaseAuthOpen] = useState(false);
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
+  const latestMenuStateRef = useRef<MenuState>(menuState);
+  latestMenuStateRef.current = menuState;
 
   useEffect(() => {
     let isActive = true;
@@ -163,6 +165,14 @@ export default function App() {
       return { ...resolvedState, updatedAt: new Date().toISOString() };
     });
   };
+
+  const requestSave = useCallback((): Promise<boolean> => {
+    return new Promise<boolean>((resolve) => {
+      window.setTimeout(() => {
+        void saveMenuSnapshot(latestMenuStateRef.current).then(resolve);
+      }, 0);
+    });
+  }, []);
 
   const requestAdmin = () => {
     if (hasSupabaseConfig) {
@@ -247,6 +257,7 @@ export default function App() {
             dataReady={snapshotLoaded}
             onClose={exitAdminRoute}
             onUpdate={updateMenuState}
+            onSave={requestSave}
             onSignOut={handleSignOut}
           />
         ) : null}
@@ -281,6 +292,7 @@ export default function App() {
           dataReady={snapshotLoaded}
           onClose={() => setAdminOpen(false)}
           onUpdate={updateMenuState}
+          onSave={requestSave}
           onSignOut={handleSignOut}
         />
       ) : null}
