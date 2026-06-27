@@ -725,7 +725,7 @@ function MenuExperience({ state, restaurant, service, language, onLanguageChange
         <img src={restaurant.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-ink/40 to-coal" />
 
-        <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:gap-3 sm:px-8 sm:pt-5">
+        <div className="max-sm:fixed sm:absolute inset-x-0 top-0 z-50 flex items-start justify-between gap-2 px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:gap-3 sm:px-8 sm:pt-5">
           <button
             type="button"
             onClick={onChangeRestaurant}
