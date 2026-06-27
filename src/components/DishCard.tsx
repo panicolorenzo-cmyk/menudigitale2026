@@ -32,7 +32,6 @@ export function DishCard({ dish, category, language }: DishCardProps) {
           className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/5 to-transparent" />
         {dish.featured ? (
           <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border border-gold/40 bg-black/40 px-2.5 py-1 text-[0.68rem] font-semibold uppercase text-gold-soft backdrop-blur-md sm:left-4 sm:top-4 sm:px-3 sm:text-xs">
             <Sparkles className="h-3.5 w-3.5" />
