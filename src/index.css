@@ -142,7 +142,6 @@ img {
   stroke-linecap: butt;
   stroke-linejoin: round;
   stroke-dasharray: 1;
-  stroke-dashoffset: 1;
   animation: introLogoPathDraw var(--draw-duration, 5s) linear var(--draw-delay, 0s) both;
 }
 
