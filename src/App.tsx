@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ShieldCheck, Wine } from 'lucide-react';
 import { AdminPanel } from './components/AdminPanel';
 import { DishCard } from './components/DishCard';
@@ -389,9 +389,21 @@ function Landing({ restaurants, language, adminMode = false, onLanguageChange, o
 }
 
 function Locanda22IntroLogo() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.querySelectorAll<SVGPathElement>('.landing-intro-logo__mask-trace').forEach((path) => {
+      const len = path.getTotalLength();
+      path.style.strokeDasharray = String(len);
+      path.style.strokeDashoffset = String(len);
+    });
+  }, []);
+
   return (
     <div aria-hidden="true" className="landing-intro-logo-shell">
-      <div dangerouslySetInnerHTML={{ __html: locanda22IntroLogoSvg }} />
+      <div ref={containerRef} dangerouslySetInnerHTML={{ __html: locanda22IntroLogoSvg }} />
     </div>
   );
 }
