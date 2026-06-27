@@ -338,13 +338,13 @@ function Landing({ restaurants, language, adminMode = false, onLanguageChange, o
   }, [adminMode]);
 
   return (
-    <main className="relative min-h-[100svh] overflow-hidden bg-[#0b0907] text-cream">
+    <main className="relative min-h-[100svh] overflow-hidden bg-black text-cream">
       {adminMode ? <img src={restaurants[0]?.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" /> : null}
       <div
         className={
           adminMode
             ? 'absolute inset-0 bg-gradient-to-b from-black/70 via-ink/45 to-ink'
-            : 'absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(197,164,106,0.08),transparent_22rem),linear-gradient(180deg,#090806_0%,#100d0a_55%,#15110d_100%)]'
+            : 'absolute inset-0 bg-[linear-gradient(180deg,#000000_0%,#100d0a_55%,#15110d_100%)]'
         }
       />
       {introEnabled ? <Locanda22IntroLogo /> : null}
