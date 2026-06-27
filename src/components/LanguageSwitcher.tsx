@@ -51,7 +51,7 @@ export function LanguageSwitcher({ value, onChange, compact = false }: LanguageS
         aria-expanded={open}
         aria-label={`Selected language ${activeLanguage.label}`}
       >
-        <span className="rounded-full bg-gold px-3 py-1 text-xs font-bold tracking-[0.18em] text-ink shadow-gold">
+        <span className="rounded-full bg-gold px-3 py-1 text-xs font-bold tracking-[0.18em] text-ink">
           {activeLanguage.short}
         </span>
         <ChevronDown className={`h-4 w-4 text-cream/80 transition duration-200 ${open ? 'rotate-180' : ''}`} />
