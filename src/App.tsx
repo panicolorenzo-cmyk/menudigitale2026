@@ -802,21 +802,35 @@ function MenuExperience({ state, restaurant, service, language, onLanguageChange
 
             {dishSections.length > 0 ? (
               <div className="space-y-4 pb-[max(calc(env(safe-area-inset-bottom)_+_6.75rem),calc(100svh_-_12rem))] pt-4 sm:space-y-8 sm:py-6">
-                {dishSections.map(({ category, dishes: categoryDishes }) => (
-                  <section
-                    key={category.id}
-                    ref={(element) => {
-                      sectionRefs.current.set(category.id, element);
-                    }}
-                    className="scroll-mt-24"
-                  >
-                    <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-                      {categoryDishes.map((dish) => (
-                        <DishCard key={dish.id} dish={dish} category={categoryById.get(dish.categoryId)} language={language} />
-                      ))}
-                    </div>
-                  </section>
-                ))}
+                {dishSections.flatMap(({ category, dishes: categoryDishes }, index) => {
+                  const sectionEl = (
+                    <section
+                      key={category.id}
+                      ref={(element) => {
+                        sectionRefs.current.set(category.id, element);
+                      }}
+                      className="scroll-mt-24"
+                    >
+                      <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+                        {categoryDishes.map((dish) => (
+                          <DishCard key={dish.id} dish={dish} category={categoryById.get(dish.categoryId)} language={language} />
+                        ))}
+                      </div>
+                    </section>
+                  );
+
+                  if (index < dishSections.length - 1) {
+                    return [
+                      sectionEl,
+                      <CategoryTransition
+                        key={`transition-${category.id}`}
+                        name={dishSections[index + 1].category.name[language]}
+                      />
+                    ];
+                  }
+
+                  return [sectionEl];
+                })}
               </div>
             ) : (
               <div className="my-10 rounded-3xl border border-white/10 bg-taupe p-8 text-center">
@@ -827,6 +841,19 @@ function MenuExperience({ state, restaurant, service, language, onLanguageChange
         )}
       </section>
     </main>
+  );
+}
+
+function CategoryTransition({ name }: { name: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="max-sm:snap-start max-sm:snap-always sm:hidden flex min-h-[100svh] flex-col items-center justify-center gap-5"
+    >
+      <div className="h-px w-14 bg-gold/30" />
+      <p className="font-display text-[2rem] leading-none text-cream/60">{name}</p>
+      <div className="h-px w-14 bg-gold/30" />
+    </div>
   );
 }
 
