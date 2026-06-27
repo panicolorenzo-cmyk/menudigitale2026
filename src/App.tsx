@@ -298,6 +298,8 @@ interface LandingProps {
 
 function Landing({ restaurants, language, adminMode = false, onLanguageChange, onSelectRestaurant }: LandingProps) {
   const [introReady, setIntroReady] = useState(() => adminMode);
+  const [introEpoch, setIntroEpoch] = useState(0);
+  const introReadyRef = useRef(introReady);
   const introEnabled = !adminMode;
   const sectionClass = adminMode ? 'justify-end' : 'justify-start';
   const headingWrapClass = adminMode
@@ -315,6 +317,8 @@ function Landing({ restaurants, language, adminMode = false, onLanguageChange, o
   const publicCardsWrapClass = introEnabled
     ? `${cardsWrapClass} ${introReady ? 'pointer-events-auto' : 'pointer-events-none'}`
     : cardsWrapClass;
+
+  useEffect(() => { introReadyRef.current = introReady; }, [introReady]);
 
   useEffect(() => {
     if (adminMode || typeof window === 'undefined') {
@@ -335,6 +339,17 @@ function Landing({ restaurants, language, adminMode = false, onLanguageChange, o
     return () => {
       window.clearTimeout(timer);
     };
+  }, [adminMode, introEpoch]);
+
+  useEffect(() => {
+    if (adminMode) return;
+    const handleVisible = () => {
+      if (document.visibilityState === 'visible' && !introReadyRef.current) {
+        setIntroEpoch((e) => e + 1);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisible);
+    return () => document.removeEventListener('visibilitychange', handleVisible);
   }, [adminMode]);
 
   return (
@@ -347,7 +362,7 @@ function Landing({ restaurants, language, adminMode = false, onLanguageChange, o
             : 'absolute inset-0 bg-[linear-gradient(180deg,#000000_0%,#100d0a_55%,#15110d_100%)]'
         }
       />
-      {introEnabled ? <Locanda22IntroLogo /> : null}
+      {introEnabled ? <Locanda22IntroLogo key={introEpoch} /> : null}
       <div className={languageWrapClass}>
         <LanguageSwitcher value={language} onChange={onLanguageChange} compact />
       </div>
@@ -389,100 +404,9 @@ function Landing({ restaurants, language, adminMode = false, onLanguageChange, o
 }
 
 function Locanda22IntroLogo() {
-  const shellRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
-
-  const isMobileDevice =
-    typeof navigator !== 'undefined' &&
-    (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
-      ('ontouchstart' in window && window.innerWidth < 1024));
-
-  useEffect(() => {
-    const shell = shellRef.current;
-    const inner = innerRef.current;
-    if (!shell || !inner || !isMobileDevice) return;
-
-    let cancelled = false;
-
-    // Double RAF: ensures the SVG geometry (including <mask> paths) is fully computed
-    const raf1 = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (cancelled) return;
-
-        const paths = Array.from(
-          inner.querySelectorAll<SVGPathElement>('.landing-intro-logo__mask-trace')
-        );
-
-        if (paths.length === 0) {
-          inner.style.opacity = '1';
-          return;
-        }
-
-        const EXTRA_DELAY = 400; // ms added before all paths start
-        const SLOWDOWN = 1.45;   // paths animate 45% slower than desktop
-        let maxEndTime = 0;
-
-        paths.forEach((path) => {
-          // Disable CSS animation so it doesn't conflict with WAAPI
-          path.style.animation = 'none';
-
-          const len = path.getTotalLength();
-
-          if (len === 0) {
-            // Measurement failed — restore CSS animation as fallback
-            path.style.animation = '';
-            return;
-          }
-
-          // CSS custom properties hold original delay/duration in seconds
-          const rawDelay = (parseFloat(getComputedStyle(path).getPropertyValue('--draw-delay').trim()) || 0) * 1000;
-          const rawDuration = (parseFloat(getComputedStyle(path).getPropertyValue('--draw-duration').trim()) || 5) * 1000;
-          const delay = EXTRA_DELAY + rawDelay * SLOWDOWN;
-          const duration = rawDuration * SLOWDOWN;
-
-          // Set absolute pixel values — bypasses pathLength normalisation entirely
-          path.style.strokeDasharray = String(len);
-          path.style.strokeDashoffset = String(len);
-
-          path.animate(
-            [{ strokeDashoffset: String(len) }, { strokeDashoffset: '0' }],
-            { duration, delay, fill: 'both', easing: 'linear' }
-          );
-
-          maxEndTime = Math.max(maxEndTime, delay + duration);
-        });
-
-        if (maxEndTime > 0) {
-          // Shift the shell fade-out to match the slower mobile timeline
-          const shellFadeDelay = (maxEndTime + 500) / 1000;
-          shell.style.animation = 'none';
-          void shell.getBoundingClientRect(); // flush pending style changes
-          shell.style.animation = `introLogoFade 1s ease ${shellFadeDelay.toFixed(2)}s both`;
-
-          // Also shift the image-reveal element that sits at 5.02s on desktop
-          const imageEl = inner.querySelector<SVGElement>('.landing-intro-logo__image');
-          if (imageEl) {
-            imageEl.style.animation = `introLogoImageReveal 0.35s ease ${(maxEndTime / 1000 + 0.02).toFixed(2)}s both`;
-          }
-        }
-
-        inner.style.opacity = '1';
-      });
-    });
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf1);
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   return (
-    <div ref={shellRef} aria-hidden="true" className="landing-intro-logo-shell">
-      <div
-        ref={innerRef}
-        style={isMobileDevice ? { opacity: 0 } : undefined}
-        dangerouslySetInnerHTML={{ __html: locanda22IntroLogoSvg }}
-      />
+    <div aria-hidden="true" className="landing-intro-logo-shell">
+      <div dangerouslySetInnerHTML={{ __html: locanda22IntroLogoSvg }} />
     </div>
   );
 }
