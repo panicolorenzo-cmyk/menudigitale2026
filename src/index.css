@@ -139,10 +139,10 @@ img {
   fill: none;
   stroke: white;
   stroke-width: 17;
-  stroke-linecap: round;
+  stroke-linecap: butt;
   stroke-linejoin: round;
-  stroke-dasharray: 100000;
-  stroke-dashoffset: 100000;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
   animation: introLogoPathDraw var(--draw-duration, 5s) linear var(--draw-delay, 0s) both;
 }
 
