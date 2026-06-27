@@ -141,8 +141,8 @@ img {
   stroke-width: 17;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
+  stroke-dasharray: 100000;
+  stroke-dashoffset: 100000;
   animation: introLogoPathDraw var(--draw-duration, 5s) linear var(--draw-delay, 0s) both;
 }
 
