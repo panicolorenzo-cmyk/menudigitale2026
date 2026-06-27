@@ -24,7 +24,7 @@ export function DishCard({ dish, category, language }: DishCardProps) {
   }).format(dish.price);
 
   return (
-    <article className="group max-sm:snap-start max-sm:snap-always overflow-hidden rounded-[1.35rem] border border-white/10 bg-taupe shadow-glow transition duration-300 hover:-translate-y-1 hover:border-gold/50 sm:rounded-[1.65rem]">
+    <article className="group max-sm:snap-start overflow-hidden rounded-[1.35rem] border border-white/10 bg-taupe shadow-glow transition duration-300 hover:-translate-y-1 hover:border-gold/50 sm:rounded-[1.65rem]">
       <div className="relative aspect-[4/3] overflow-hidden bg-coal">
         <img
           src={dish.image}
