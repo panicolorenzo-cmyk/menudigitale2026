@@ -446,7 +446,10 @@ function LandingCard({ restaurant, language, adminMode, index, onSelect }: Landi
         };
   const eyebrow = adminMode ? txt(language, 'manageMenu') : null;
   const image = adminMode ? restaurant.heroImage : publicExperience.image;
-  const title = adminMode ? restaurant.name : publicExperience.title;
+  const adminTitle = restaurant.id === 'locanda22'
+    ? txt(language, 'manageMenuCucina')
+    : txt(language, 'manageMenuAperitivi');
+  const title = adminMode ? adminTitle : publicExperience.title;
   const description = adminMode ? restaurant.subtitle[language] : publicExperience.description;
   const cardClass = adminMode
     ? 'group relative min-h-[10rem] overflow-hidden rounded-[1.6rem] border border-white/15 bg-taupe text-left shadow-glow transition duration-300 hover:-translate-y-1 hover:border-gold/60 sm:min-h-52 sm:rounded-[1.9rem]'
