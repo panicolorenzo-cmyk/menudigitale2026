@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { hasSupabaseConfig, uploadMenuImage } from '../lib/supabase';
 import { txt } from '../lib/text';
+import { translateFromItalian } from '../lib/translate';
 import { LANGUAGES, type Category, type Dish, type LanguageCode, type MenuState, type Restaurant, type ServiceType, type TranslatedText } from '../types';
 import { QRCodeCanvas } from './QRCodeCanvas';
 
@@ -198,22 +199,31 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
     void onSave();
   };
 
-  const saveDish = () => {
-    const existingDish = dishDraft.id
-      ? state.dishes.find((dish) => dish.id === dishDraft.id && dish.restaurantId === restaurant.id)
+  const saveDish = async () => {
+    setSaveDishStatus('saving');
+
+    const [translatedName, translatedDescription] = await Promise.all([
+      translateFromItalian(dishDraft.name.it || ''),
+      translateFromItalian(dishDraft.description.it || '')
+    ]);
+
+    const draftToSave = { ...dishDraft, name: translatedName, description: translatedDescription };
+
+    const existingDish = draftToSave.id
+      ? state.dishes.find((dish) => dish.id === draftToSave.id && dish.restaurantId === restaurant.id)
       : undefined;
-    const categoryId = getValidCategoryId(dishDraft.categoryId);
-    const image = dishDraft.image.trim() || existingDish?.image || DEFAULT_DISH_IMAGE;
+    const categoryId = getValidCategoryId(draftToSave.categoryId);
+    const image = draftToSave.image.trim() || existingDish?.image || DEFAULT_DISH_IMAGE;
     const normalized: Dish = {
       ...existingDish,
-      ...dishDraft,
-      id: dishDraft.id || makeId(`${restaurant.id}-dish`, dishDraft.name.it || dishDraft.name[language] || 'piatto'),
+      ...draftToSave,
+      id: draftToSave.id || makeId(`${restaurant.id}-dish`, draftToSave.name.it || 'piatto'),
       restaurantId: restaurant.id,
       categoryId,
-      name: normalizeText(dishDraft.name, 'Piatto'),
-      description: normalizeText(dishDraft.description, ''),
-      allergens: dishDraft.allergens.map((allergen) => allergen.trim()).filter(Boolean),
-      price: Number(dishDraft.price) || 0,
+      name: normalizeText(draftToSave.name, 'Piatto'),
+      description: normalizeText(draftToSave.description, ''),
+      allergens: draftToSave.allergens.map((allergen) => allergen.trim()).filter(Boolean),
+      price: Number(draftToSave.price) || 0,
       image
     };
 
@@ -230,7 +240,6 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
     onUpdate(nextState);
     setDishDraft(blankDish(normalized.categoryId));
 
-    setSaveDishStatus('saving');
     void onSave().then((ok) => {
       setSaveDishStatus(ok ? 'saved' : 'error');
       if (ok) window.setTimeout(() => setSaveDishStatus(null), 2000);
@@ -369,17 +378,25 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                   <h3 className="font-display text-xl">{dishDraft.id ? dishDraft.name[language] : txt(language, 'addDish')}</h3>
                 </div>
                 <div className="space-y-4">
-                  <TranslatedInputs
-                    title={txt(language, 'name')}
-                    value={dishDraft.name}
-                    onChange={(name) => setDishDraft((current) => ({ ...current, name }))}
-                  />
-                  <TranslatedInputs
-                    title={txt(language, 'description')}
-                    value={dishDraft.description}
-                    multiline
-                    onChange={(description) => setDishDraft((current) => ({ ...current, description }))}
-                  />
+                  <label className="space-y-2">
+                    <span className="admin-label">{txt(language, 'name')}</span>
+                    <input
+                      value={dishDraft.name.it}
+                      onChange={(e) => setDishDraft((current) => ({ ...current, name: { ...current.name, it: e.target.value } }))}
+                      className="admin-input"
+                      placeholder="Nome del piatto"
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="admin-label">{txt(language, 'description')}</span>
+                    <textarea
+                      value={dishDraft.description.it}
+                      onChange={(e) => setDishDraft((current) => ({ ...current, description: { ...current.description, it: e.target.value } }))}
+                      className="admin-input min-h-20 resize-y"
+                      placeholder="Descrizione del piatto"
+                    />
+                    <p className="text-[0.65rem] text-muted/60">Le altre lingue vengono tradotte automaticamente al salvataggio.</p>
+                  </label>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="space-y-2">
                       <span className="admin-label">{txt(language, 'category')}</span>
@@ -449,9 +466,9 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                       className="h-5 w-5 accent-gold"
                     />
                   </label>
-                  <button type="button" onClick={saveDish} disabled={saveDishStatus === 'saving'} className="admin-primary-button w-full justify-center sm:w-auto">
+                  <button type="button" onClick={() => { void saveDish(); }} disabled={saveDishStatus === 'saving'} className="admin-primary-button w-full justify-center sm:w-auto">
                     <Save className="h-4 w-4" />
-                    {saveDishStatus === 'saving' ? 'Salvataggio...' : txt(language, 'save')}
+                    {saveDishStatus === 'saving' ? 'Traduzione e salvataggio...' : txt(language, 'save')}
                   </button>
                   {saveDishStatus === 'saved' && <p className="text-xs text-green-400">Salvato su Supabase</p>}
                   {saveDishStatus === 'error' && <p className="text-xs text-red-400">Errore salvataggio Supabase — verifica connessione</p>}
