@@ -458,31 +458,31 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {restaurantDishes.map((dish) => {
                   const category = restaurantCategories.find((item) => item.id === dish.categoryId);
                   return (
-                    <div key={dish.id} className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-3 sm:rounded-3xl">
-                      <div className="flex gap-3">
-                        <img src={dish.image} alt="" className="h-20 w-20 shrink-0 rounded-2xl object-cover sm:h-24 sm:w-24" />
+                    <div key={dish.id} className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-2.5 sm:rounded-2xl">
+                      <div className="flex gap-2.5">
+                        <img src={dish.image} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover sm:h-16 sm:w-16" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold uppercase text-gold/80">{category?.name[language]}</p>
-                          <h4 className="line-clamp-2 font-display text-lg leading-tight sm:text-xl">{dish.name[language]}</h4>
-                          <p className="mt-1 text-sm text-muted">€ {dish.price.toFixed(2)}</p>
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            <button type="button" onClick={() => setDishDraft(cloneDishForDraft(dish))} className="admin-secondary-button">
+                          <p className="text-[0.65rem] font-semibold uppercase leading-none text-gold/80">{category?.name[language]}</p>
+                          <h4 className="mt-0.5 line-clamp-2 font-display text-[1rem] leading-tight sm:text-[1.05rem]">{dish.name[language]}</h4>
+                          <p className="mt-0.5 text-xs font-medium text-muted">€ {dish.price.toFixed(2)}</p>
+                          <div className="mt-2 grid grid-cols-3 gap-1.5">
+                            <button type="button" onClick={() => setDishDraft(cloneDishForDraft(dish))} className="admin-compact-button">
                               Modifica
                             </button>
-                            <button type="button" onClick={() => toggleDish(dish)} className="admin-secondary-button">
-                              <Power className="h-3.5 w-3.5" />
+                            <button type="button" onClick={() => toggleDish(dish)} className="admin-compact-button">
+                              <Power className="h-3 w-3" />
                               {dish.active ? txt(language, 'inactive') : txt(language, 'active')}
                             </button>
                             <button
                               type="button"
                               onClick={() => deleteDish(dish)}
-                              className="admin-secondary-button text-red-400 hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-300"
+                              className="admin-compact-button text-red-400 hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-300"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-3 w-3" />
                               Elimina
                             </button>
                           </div>
@@ -550,14 +550,14 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {restaurantCategories.map((category) => (
-                  <div key={category.id} className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-3 sm:rounded-3xl sm:p-4">
+                  <div key={category.id} className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-2.5 sm:rounded-2xl sm:p-3">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-xs font-semibold uppercase text-gold/80">#{category.sortOrder}</p>
-                        <h4 className="font-display text-xl">{category.name[language]}</h4>
-                        <p className="mt-1 text-sm text-muted">
+                        <h4 className="font-display text-lg">{category.name[language]}</h4>
+                        <p className="mt-0.5 text-xs text-muted">
                           {restaurantDishes.filter((dish) => dish.categoryId === category.id).length} piatti
                           {restaurant.id === 'locanda22' ? (
                             <span className="ml-2 rounded-full bg-white/8 px-2 py-0.5 text-[0.65rem] font-semibold uppercase">
@@ -570,20 +570,20 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                         {category.active ? txt(language, 'active') : txt(language, 'inactive')}
                       </span>
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button type="button" onClick={() => setCategoryDraft(category)} className="admin-secondary-button">
+                    <div className="mt-2 grid grid-cols-3 gap-1.5">
+                      <button type="button" onClick={() => setCategoryDraft(category)} className="admin-compact-button">
                         Modifica
                       </button>
-                      <button type="button" onClick={() => toggleCategory(category)} className="admin-secondary-button">
-                        <Power className="h-3.5 w-3.5" />
+                      <button type="button" onClick={() => toggleCategory(category)} className="admin-compact-button">
+                        <Power className="h-3 w-3" />
                         {category.active ? txt(language, 'inactive') : txt(language, 'active')}
                       </button>
                       <button
                         type="button"
                         onClick={() => deleteCategory(category)}
-                        className="admin-secondary-button text-red-400 hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-300"
+                        className="admin-compact-button text-red-400 hover:border-red-400/40 hover:bg-red-400/10 hover:text-red-300"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3 w-3" />
                         Elimina
                       </button>
                     </div>
