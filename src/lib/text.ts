@@ -22,7 +22,7 @@ export const uiText: Record<LanguageCode, Record<string, string>> = {
     changeVenue: 'Cambia locale',
     admin: 'Admin',
     adminArea: 'Area admin',
-    chooseAdminVenue: 'Scegli il locale da gestire',
+    chooseAdminVenue: 'Scegli la categoria da gestire',
     manageMenu: 'Gestisci menu',
     manageMenuCucina: 'Gestisci menu cucina',
     manageMenuAperitivi: 'Gestisci menu aperitivi',
