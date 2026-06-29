@@ -63,7 +63,11 @@ const slugify = (value: string) =>
 
 const makeId = (prefix: string, label: string) => `${prefix}-${slugify(label) || 'item'}-${Date.now().toString(36)}`;
 
-const origin = () => (typeof window !== 'undefined' ? window.location.origin : '');
+const origin = () => {
+  const configured = import.meta.env.VITE_APP_PUBLIC_URL as string | undefined;
+  if (configured?.trim()) return configured.trim().replace(/\/$/, '');
+  return typeof window !== 'undefined' ? window.location.origin : '';
+};
 
 export function AdminPanel({ state, restaurant, language, dataReady = true, onClose, onUpdate, onSave, onSignOut }: AdminPanelProps) {
   const [tab, setTab] = useState<AdminTab>('dishes');
