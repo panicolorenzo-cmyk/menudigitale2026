@@ -611,7 +611,7 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
 
           {dataReady && tab === 'qr' ? (
             <section className="grid gap-5 md:grid-cols-2">
-              {state.restaurants.map((item) => {
+              {state.restaurants.filter((item) => item.id === 'locanda22').map((item) => {
                 const link = buildRestaurantLink(item.id);
                 return (
                   <div key={item.id} className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-3 sm:rounded-3xl sm:p-4">

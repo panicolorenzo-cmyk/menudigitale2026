@@ -15,8 +15,8 @@ export function QRCodeCanvas({ value, label }: QRCodeCanvasProps) {
     }
 
     void QRCode.toCanvas(canvasRef.current, value, {
-      width: 176,
-      margin: 2,
+      width: 220,
+      margin: 4,
       color: {
         dark: '#171410',
         light: '#f7efe4'
@@ -26,7 +26,7 @@ export function QRCodeCanvas({ value, label }: QRCodeCanvasProps) {
 
   return (
     <div className="rounded-2xl border border-white/10 bg-cream p-4 text-ink shadow-glow">
-      <canvas ref={canvasRef} className="mx-auto h-44 w-44" aria-label={label} />
+      <canvas ref={canvasRef} className="mx-auto h-[220px] w-[220px]" aria-label={label} />
       <p className="mt-3 break-all text-center text-xs font-semibold text-ink/70">{value}</p>
     </div>
   );
