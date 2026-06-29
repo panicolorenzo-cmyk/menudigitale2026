@@ -38,21 +38,17 @@ export const signInAdmin = async (email: string, password: string): Promise<{ er
   if (error) {
     return { error: error.message };
   }
-  await supabase.rpc('register_first_admin');
+  const { data: isAdmin } = await supabase.rpc('register_first_admin');
+  if (!isAdmin) {
+    await supabase.auth.signOut();
+    return { error: 'Accesso non autorizzato.' };
+  }
   return { error: null };
 };
 
 export const signOutAdmin = async (): Promise<void> => {
   if (!supabase) return;
   await supabase.auth.signOut();
-};
-
-export const getAdminSession = async (): Promise<boolean> => {
-  if (!supabase) return false;
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) return false;
-  await supabase.rpc('register_first_admin');
-  return true;
 };
 
 export const uploadMenuImage = async (file: File): Promise<string | null> => {
