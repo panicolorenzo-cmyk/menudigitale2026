@@ -206,13 +206,17 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
     }));
   }, [restaurant.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const saveCategory = () => {
+  const saveCategory = async () => {
+    setSaveCategoryStatus('saving');
+
+    const translatedName = await translateFromItalian(categoryDraft.name.it || '');
+
     const normalized: Category = {
       ...categoryDraft,
-      id: categoryDraft.id || makeId(`${restaurant.id}-category`, categoryDraft.name.it || categoryDraft.name[language] || 'categoria'),
+      id: categoryDraft.id || makeId(`${restaurant.id}-category`, categoryDraft.name.it || 'categoria'),
       restaurantId: restaurant.id,
       serviceType: categoryDraft.serviceType ?? 'cucina',
-      name: normalizeText(categoryDraft.name, 'Categoria'),
+      name: translatedName,
       sortOrder: Number(categoryDraft.sortOrder) || restaurantCategories.length * 10 + 10
     };
 
@@ -229,7 +233,6 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
     onUpdate(nextState);
     setCategoryDraft(blankCategory());
 
-    setSaveCategoryStatus('saving');
     void onSave().then((ok) => {
       setSaveCategoryStatus(ok ? 'saved' : 'error');
       if (ok) window.setTimeout(() => setSaveCategoryStatus(null), 2000);
@@ -580,11 +583,16 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                   </h3>
                 </div>
                 <div className="space-y-4">
-                  <TranslatedInputs
-                    title={txt(language, 'name')}
-                    value={categoryDraft.name}
-                    onChange={(name) => setCategoryDraft((current) => ({ ...current, name }))}
-                  />
+                  <label className="space-y-2">
+                    <span className="admin-label">{txt(language, 'name')}</span>
+                    <input
+                      value={categoryDraft.name.it}
+                      onChange={(e) => setCategoryDraft((current) => ({ ...current, name: { ...current.name, it: e.target.value } }))}
+                      className="admin-input"
+                      placeholder="Nome della categoria"
+                    />
+                    <p className="text-[0.65rem] text-muted/60">Le altre lingue vengono tradotte automaticamente al salvataggio.</p>
+                  </label>
                   {restaurant.id === 'locanda22' ? (
                     <label className="space-y-2">
                       <span className="admin-label">{txt(language, 'serviceTypeLabel')}</span>
@@ -616,9 +624,9 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                       className="h-5 w-5 accent-gold"
                     />
                   </label>
-                  <button type="button" onClick={saveCategory} disabled={saveCategoryStatus === 'saving'} className="admin-primary-button w-full justify-center sm:w-auto">
+                  <button type="button" onClick={() => { void saveCategory(); }} disabled={saveCategoryStatus === 'saving'} className="admin-primary-button w-full justify-center sm:w-auto">
                     <Save className="h-4 w-4" />
-                    {saveCategoryStatus === 'saving' ? 'Salvataggio...' : txt(language, 'save')}
+                    {saveCategoryStatus === 'saving' ? 'Traduzione e salvataggio...' : txt(language, 'save')}
                   </button>
                   {saveCategoryStatus === 'saved' && <p className="text-xs text-green-400">Salvato su Supabase</p>}
                   {saveCategoryStatus === 'error' && <p className="text-xs text-red-400">Errore salvataggio Supabase — verifica connessione</p>}
