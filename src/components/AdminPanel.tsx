@@ -572,7 +572,6 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
                   <div key={category.id} className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-2.5 sm:rounded-2xl sm:p-3">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-xs font-semibold uppercase text-gold/80">#{category.sortOrder}</p>
                         <h4 className="font-display text-lg">{category.name[language]}</h4>
                         <p className="mt-0.5 text-xs text-muted">
                           {restaurantDishes.filter((dish) => dish.categoryId === category.id).length} piatti
