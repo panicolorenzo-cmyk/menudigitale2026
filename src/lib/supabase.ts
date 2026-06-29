@@ -35,7 +35,11 @@ export const signInAdmin = async (email: string, password: string): Promise<{ er
     return { error: 'Supabase non configurato.' };
   }
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  return { error: error ? error.message : null };
+  if (error) {
+    return { error: error.message };
+  }
+  await supabase.rpc('register_first_admin');
+  return { error: null };
 };
 
 export const signOutAdmin = async (): Promise<void> => {
@@ -46,7 +50,9 @@ export const signOutAdmin = async (): Promise<void> => {
 export const getAdminSession = async (): Promise<boolean> => {
   if (!supabase) return false;
   const { data } = await supabase.auth.getSession();
-  return Boolean(data.session);
+  if (!data.session) return false;
+  await supabase.rpc('register_first_admin');
+  return true;
 };
 
 export const uploadMenuImage = async (file: File): Promise<string | null> => {
