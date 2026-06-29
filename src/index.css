@@ -28,7 +28,7 @@ html {
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   font-family: 'Montserrat', 'Avenir Next', 'Segoe UI', sans-serif;
   background: linear-gradient(180deg, #000000 0%, #12100d 100%);

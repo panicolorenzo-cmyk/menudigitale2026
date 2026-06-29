@@ -365,7 +365,7 @@ function Landing({ restaurants, language, adminMode = false, onLanguageChange, o
   }, [adminMode]);
 
   return (
-    <main className="relative min-h-[100svh] overflow-hidden bg-black text-cream">
+    <main className="relative min-h-[100dvh] overflow-hidden bg-black text-cream">
       {adminMode ? <img src={restaurants[0]?.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" /> : null}
       <div
         className={
@@ -379,7 +379,7 @@ function Landing({ restaurants, language, adminMode = false, onLanguageChange, o
         <LanguageSwitcher value={language} onChange={onLanguageChange} compact />
       </div>
 
-      <section className={`relative z-10 mx-auto flex min-h-[100svh] w-full max-w-6xl flex-col px-3 pb-4 pt-[calc(env(safe-area-inset-top)+4.55rem)] sm:px-8 sm:pb-8 sm:pt-28 ${sectionClass}`}>
+      <section className={`relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-3 pb-4 pt-[calc(env(safe-area-inset-top)+4.55rem)] sm:px-8 sm:pb-8 sm:pt-28 ${sectionClass}`}>
         <div className={headingWrapClass}>
           {adminMode ? <p className="mb-3 text-xs font-semibold uppercase text-gold-soft">{txt(language, 'adminArea')}</p> : null}
           <h1 className={headingClass}>
@@ -748,8 +748,8 @@ function MenuExperience({ state, restaurant, service, language, onLanguageChange
   };
 
   return (
-    <main className="min-h-screen bg-coal text-cream">
-      <section className="relative flex min-h-[calc(100svh-6rem)] overflow-hidden sm:min-h-[96svh]">
+    <main className="min-h-[100dvh] bg-coal text-cream">
+      <section className="relative flex min-h-[calc(100dvh-6rem)] overflow-hidden sm:min-h-[96dvh]">
         <img src={restaurant.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-ink/40 to-coal" />
 
@@ -840,7 +840,7 @@ function MenuExperience({ state, restaurant, service, language, onLanguageChange
             </div>
 
             {dishSections.length > 0 ? (
-              <div className="space-y-4 pb-[max(calc(env(safe-area-inset-bottom)_+_6.75rem),calc(100svh_-_12rem))] pt-4 sm:space-y-8 sm:py-6">
+              <div className="space-y-4 pb-[calc(env(safe-area-inset-bottom)+6.5rem)] pt-4 sm:space-y-8 sm:py-6">
                 {dishSections.map(({ category, dishes: categoryDishes }) => (
                   <section
                     key={category.id}
@@ -878,7 +878,7 @@ interface AdminGatewayProps {
 
 function AdminGateway({ restaurant, language, onChangeRestaurant, onOpenAdmin }: AdminGatewayProps) {
   return (
-    <main className="relative min-h-[100svh] overflow-hidden bg-ink text-cream">
+    <main className="relative min-h-[100dvh] overflow-hidden bg-ink text-cream">
       <img src={restaurant.heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-ink/55 to-coal" />
       <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:px-8 sm:pt-5">
@@ -892,7 +892,7 @@ function AdminGateway({ restaurant, language, onChangeRestaurant, onOpenAdmin }:
         </button>
       </div>
 
-      <section className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-4xl flex-col justify-end px-3 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-24 sm:px-8">
+      <section className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-4xl flex-col justify-end px-3 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-24 sm:px-8">
         <div className="rounded-[1.5rem] border border-white/10 bg-black/35 p-5 shadow-glow backdrop-blur-md sm:p-7">
           <p className="mb-3 text-xs font-semibold uppercase text-gold-soft">{txt(language, 'adminArea')}</p>
           <h1 className="font-display text-[clamp(3rem,16vw,6rem)] leading-[0.9]">{restaurant.name}</h1>
