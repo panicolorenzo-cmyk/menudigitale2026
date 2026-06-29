@@ -329,7 +329,7 @@ function Landing({ restaurants, language, adminMode = false, skipIntro = false, 
     : 'mt-8 grid gap-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] sm:mt-10 md:grid-cols-2 md:gap-5';
   const languageWrapClass = adminMode
     ? 'absolute inset-x-0 top-0 z-30 flex justify-end px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:px-8 sm:pt-5'
-    : `absolute inset-x-0 top-0 z-30 flex justify-end px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:px-8 sm:pt-5 landing-language-intro ${introReady ? 'pointer-events-auto' : 'pointer-events-none'}`;
+    : `absolute inset-x-0 top-0 z-30 flex justify-end px-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:px-8 sm:pt-5 ${skipIntro ? '' : 'landing-language-intro'} ${introReady ? 'pointer-events-auto' : 'pointer-events-none'}`;
   const publicCardsWrapClass = introEnabled
     ? `${cardsWrapClass} ${introReady ? 'pointer-events-auto' : 'pointer-events-none'}`
     : cardsWrapClass;
@@ -391,9 +391,9 @@ function Landing({ restaurants, language, adminMode = false, skipIntro = false, 
               txt(language, 'admin')
             ) : (
               <>
-                <span className="hero-title-line hero-title-line-1 block">{txt(language, 'chooseExperienceLine1')}</span>
-                <span className="hero-title-line hero-title-line-2 block">{txt(language, 'chooseExperienceLine2')}</span>
-                <span className="hero-title-line hero-title-line-3 block">{txt(language, 'chooseExperienceLine3')}</span>
+                <span className={`${skipIntro ? '' : 'hero-title-line hero-title-line-1'} block`}>{txt(language, 'chooseExperienceLine1')}</span>
+                <span className={`${skipIntro ? '' : 'hero-title-line hero-title-line-2'} block`}>{txt(language, 'chooseExperienceLine2')}</span>
+                <span className={`${skipIntro ? '' : 'hero-title-line hero-title-line-3'} block`}>{txt(language, 'chooseExperienceLine3')}</span>
               </>
             )}
           </h1>
@@ -409,6 +409,7 @@ function Landing({ restaurants, language, adminMode = false, skipIntro = false, 
               restaurant={restaurant}
               language={language}
               adminMode={adminMode}
+              skipIntro={skipIntro}
               index={index}
               onSelect={() => onSelectRestaurant(restaurant.id)}
             />
@@ -431,11 +432,12 @@ interface LandingCardProps {
   restaurant: Restaurant;
   language: LanguageCode;
   adminMode: boolean;
+  skipIntro: boolean;
   index: number;
   onSelect: () => void;
 }
 
-function LandingCard({ restaurant, language, adminMode, index, onSelect }: LandingCardProps) {
+function LandingCard({ restaurant, language, adminMode, skipIntro, index, onSelect }: LandingCardProps) {
   const publicExperience =
     restaurant.id === 'locanda22'
       ? {
@@ -466,7 +468,7 @@ function LandingCard({ restaurant, language, adminMode, index, onSelect }: Landi
     ? 'relative flex h-full flex-col justify-end p-4 sm:min-h-52 sm:p-5'
     : 'relative flex h-full flex-col justify-end p-4 sm:p-5';
   const titleWrapClass = adminMode ? '' : 'min-h-[3.6rem] sm:min-h-[4.35rem]';
-  const introClass = adminMode
+  const introClass = adminMode || skipIntro
     ? ''
     : index === 0
       ? 'landing-card-intro landing-card-intro-left'
