@@ -93,6 +93,7 @@ export default function App() {
   const [adminOpen, setAdminOpen] = useState(false);
   const [supabaseAuthOpen, setSupabaseAuthOpen] = useState(false);
   const [snapshotLoaded, setSnapshotLoaded] = useState(false);
+  const [skipLandingIntro, setSkipLandingIntro] = useState(false);
   const latestMenuStateRef = useRef<MenuState>(menuState);
   latestMenuStateRef.current = menuState;
 
@@ -215,6 +216,7 @@ export default function App() {
   };
 
   const handleBackFromMenu = () => {
+    setSkipLandingIntro(true);
     setSelectedRestaurantId(null);
     setSelectedService(null);
   };
@@ -225,6 +227,7 @@ export default function App() {
         restaurants={menuState.restaurants}
         language={language}
         adminMode={adminMode}
+        skipIntro={skipLandingIntro}
         onLanguageChange={setLanguage}
         onSelectRestaurant={handleSelectRestaurant}
       />
@@ -304,12 +307,13 @@ interface LandingProps {
   restaurants: Restaurant[];
   language: LanguageCode;
   adminMode?: boolean;
+  skipIntro?: boolean;
   onLanguageChange: (language: LanguageCode) => void;
   onSelectRestaurant: (restaurantId: RestaurantId) => void;
 }
 
-function Landing({ restaurants, language, adminMode = false, onLanguageChange, onSelectRestaurant }: LandingProps) {
-  const [introReady, setIntroReady] = useState(() => adminMode);
+function Landing({ restaurants, language, adminMode = false, skipIntro = false, onLanguageChange, onSelectRestaurant }: LandingProps) {
+  const [introReady, setIntroReady] = useState(() => adminMode || skipIntro);
   const [introEpoch, setIntroEpoch] = useState(0);
   const introReadyRef = useRef(introReady);
   const introEnabled = !adminMode;
@@ -333,7 +337,7 @@ function Landing({ restaurants, language, adminMode = false, onLanguageChange, o
   useEffect(() => { introReadyRef.current = introReady; }, [introReady]);
 
   useEffect(() => {
-    if (adminMode || typeof window === 'undefined') {
+    if (adminMode || skipIntro || typeof window === 'undefined') {
       setIntroReady(true);
       return;
     }
@@ -351,7 +355,7 @@ function Landing({ restaurants, language, adminMode = false, onLanguageChange, o
     return () => {
       window.clearTimeout(timer);
     };
-  }, [adminMode, introEpoch]);
+  }, [adminMode, skipIntro, introEpoch]);
 
   useEffect(() => {
     if (adminMode) return;
