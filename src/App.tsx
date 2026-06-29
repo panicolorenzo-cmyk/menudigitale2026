@@ -955,13 +955,14 @@ function SupabaseAuthModal({ language, onClose, onAuth }: SupabaseAuthModalProps
                 onChange={(event) => setPassword(event.target.value)}
                 type={showPassword ? 'text' : 'password'}
                 required
-                className="admin-input pr-10"
+                className="admin-input !pr-11"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-0 flex items-center px-3 text-cream/50 hover:text-cream transition"
+                className="absolute inset-y-0 right-0 z-10 flex items-center px-3 text-cream/70 hover:text-gold transition"
                 tabIndex={-1}
+                aria-label={showPassword ? 'Nascondi password' : 'Mostra password'}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
