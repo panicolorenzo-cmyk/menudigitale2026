@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ShieldCheck, Wine } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, ShieldCheck, Wine } from 'lucide-react';
 import { AdminPanel } from './components/AdminPanel';
 import { DishCard } from './components/DishCard';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
@@ -904,6 +904,7 @@ interface SupabaseAuthModalProps {
 function SupabaseAuthModal({ language, onClose, onAuth }: SupabaseAuthModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -948,13 +949,23 @@ function SupabaseAuthModal({ language, onClose, onAuth }: SupabaseAuthModalProps
           </label>
           <label className="space-y-2">
             <span className="admin-label">{txt(language, 'password')}</span>
-            <input
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              type="password"
-              required
-              className="admin-input"
-            />
+            <div className="relative">
+              <input
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                type={showPassword ? 'text' : 'password'}
+                required
+                className="admin-input pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-cream/50 hover:text-cream transition"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </label>
         </div>
         {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
