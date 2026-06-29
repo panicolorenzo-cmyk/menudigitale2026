@@ -766,7 +766,7 @@ function MenuExperience({ state, restaurant, service, language, onLanguageChange
         </div>
 
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col justify-start px-3 pb-8 pt-[calc(env(safe-area-inset-top)+4.35rem)] sm:justify-end sm:px-8 sm:pb-10 sm:pt-28">
-          <div className={`${showAdelardiFoodLogo ? 'max-w-[24rem]' : 'max-w-3xl'} animate-fadeUp`}>
+          <div className={`${showAdelardiFoodLogo || restaurant.logoImage ? 'max-w-[24rem]' : 'max-w-3xl'} animate-fadeUp`}>
             {showAdelardiFoodLogo ? (
               <>
                 <img
@@ -780,6 +780,17 @@ function MenuExperience({ state, restaurant, service, language, onLanguageChange
                   </p>
                 ) : null}
               </>
+            ) : restaurant.logoImage ? (
+              <>
+                <img
+                  src={restaurant.logoImage}
+                  alt={restaurant.name}
+                  className="block max-h-28 w-auto max-w-[16rem] object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)] sm:max-h-36 sm:max-w-[22rem]"
+                />
+                <p className="mt-5 max-w-2xl text-[0.95rem] leading-6 text-cream/80 sm:mt-6 sm:text-xl sm:leading-8">
+                  {restaurant.subtitle[language]}
+                </p>
+              </>
             ) : (
               <>
                 <h1 className="font-display text-[clamp(3.2rem,18vw,6rem)] leading-[0.9] sm:text-8xl">{restaurant.name}</h1>
@@ -788,7 +799,7 @@ function MenuExperience({ state, restaurant, service, language, onLanguageChange
                 </p>
               </>
             )}
-            <p className={`${showHeroDescription ? 'mt-5 sm:mt-6' : showAdelardiFoodLogo ? 'mt-7' : 'mt-3 sm:mt-4'} text-sm leading-5 text-cream/60`}>
+            <p className={`${showHeroDescription || restaurant.logoImage ? 'mt-5 sm:mt-6' : showAdelardiFoodLogo ? 'mt-7' : 'mt-3 sm:mt-4'} text-sm leading-5 text-cream/60`}>
               {restaurant.address}
             </p>
           </div>

@@ -21,6 +21,7 @@ export interface Restaurant {
   phone: string;
   heroImage: string;
   accent: string;
+  logoImage?: string;
 }
 
 export interface Category {

@@ -24,7 +24,8 @@ export const demoRestaurants: Restaurant[] = [
     address: 'Via del Gusto 22, Centro Storico',
     phone: '+39 000 222 222',
     heroImage: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c?auto=format&fit=crop&w=1800&q=86',
-    accent: '#c5a46a'
+    accent: '#c5a46a',
+    logoImage: '/images/locanda22-original-cream.png'
   },
   {
     id: 'adelardi',

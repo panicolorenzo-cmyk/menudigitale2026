@@ -37,7 +37,8 @@ export const normalizeMenuState = (state: MenuState): MenuState => ({
   ...state,
   restaurants: state.restaurants.map((restaurant) => ({
     ...restaurant,
-    subtitle: normalizeTranslatedText(restaurant.subtitle)
+    subtitle: normalizeTranslatedText(restaurant.subtitle),
+    logoImage: typeof restaurant.logoImage === 'string' && restaurant.logoImage ? restaurant.logoImage : undefined
   })),
   categories: state.categories.map((category) => ({
     ...category,

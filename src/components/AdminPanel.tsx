@@ -1,5 +1,8 @@
 import { ChangeEvent, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
+  Check,
+  Copy,
+  Download,
   ExternalLink,
   Image as ImageIcon,
   LogOut,
@@ -13,6 +16,7 @@ import {
   Utensils,
   X
 } from 'lucide-react';
+import QRCode from 'qrcode';
 import { hasSupabaseConfig, uploadMenuImage } from '../lib/supabase';
 import { txt } from '../lib/text';
 import { translateFromItalian } from '../lib/translate';
@@ -59,21 +63,7 @@ const slugify = (value: string) =>
 
 const makeId = (prefix: string, label: string) => `${prefix}-${slugify(label) || 'item'}-${Date.now().toString(36)}`;
 
-const buildRestaurantLink = (restaurantId: string) => {
-  if (typeof window === 'undefined') {
-    return `/?locale=${restaurantId}`;
-  }
-
-  return `${window.location.origin}/?locale=${restaurantId}`;
-};
-
-const buildAdminLink = (restaurantId: string) => {
-  if (typeof window === 'undefined') {
-    return `/admin?locale=${restaurantId}`;
-  }
-
-  return `${window.location.origin}/admin?locale=${restaurantId}`;
-};
+const origin = () => (typeof window !== 'undefined' ? window.location.origin : '');
 
 export function AdminPanel({ state, restaurant, language, dataReady = true, onClose, onUpdate, onSave, onSignOut }: AdminPanelProps) {
   const [tab, setTab] = useState<AdminTab>('dishes');
@@ -133,6 +123,70 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
   const [dishDraft, setDishDraft] = useState<Dish>(() => blankDish());
   const [saveDishStatus, setSaveDishStatus] = useState<null | 'saving' | 'saved' | 'error'>(null);
   const [saveCategoryStatus, setSaveCategoryStatus] = useState<null | 'saving' | 'saved' | 'error'>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const menuLink = `${origin()}/`;
+  const adminLink = `${origin()}/admin`;
+
+  const downloadQRPng = async (value: string, filename: string) => {
+    const dataUrl = await QRCode.toDataURL(value, { width: 512, margin: 4, color: { dark: '#171410', light: '#f7efe4' } });
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `${filename}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const downloadQRSvg = async (value: string, filename: string) => {
+    const svg = await QRCode.toString(value, { type: 'svg', width: 512, margin: 4 });
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}.svg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const copyLink = (link: string, id: string) => {
+    void navigator.clipboard.writeText(link).then(() => {
+      setCopiedId(id);
+      window.setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
+
+  const handleLogoUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    event.target.value = '';
+
+    const saveLogoImage = (url: string) => {
+      onUpdate((currentState) => ({
+        ...currentState,
+        restaurants: currentState.restaurants.map((r) =>
+          r.id === restaurant.id ? { ...r, logoImage: url } : r
+        )
+      }));
+      void onSave();
+    };
+
+    if (hasSupabaseConfig) {
+      void uploadMenuImage(file).then((url) => {
+        if (url) { saveLogoImage(url); return; }
+        const reader = new FileReader();
+        reader.onload = () => saveLogoImage(String(reader.result));
+        reader.readAsDataURL(file);
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => saveLogoImage(String(reader.result));
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     setCategoryDraft(blankCategory());
@@ -610,35 +664,90 @@ export function AdminPanel({ state, restaurant, language, dataReady = true, onCl
           ) : null}
 
           {dataReady && tab === 'qr' ? (
-            <section className="grid gap-5 md:grid-cols-2">
-              {state.restaurants.filter((item) => item.id === 'locanda22').map((item) => {
-                const link = buildRestaurantLink(item.id);
-                return (
+            <div className="space-y-6">
+              {/* Logo section */}
+              <div className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-3 sm:rounded-3xl sm:p-4">
+                <div className="mb-4 flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-gold" />
+                  <h3 className="font-display text-xl">Logo pubblico</h3>
+                </div>
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex h-24 w-44 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/25 p-2">
+                    {restaurant.logoImage ? (
+                      <img src={restaurant.logoImage} alt="Logo" className="max-h-20 max-w-full object-contain" />
+                    ) : (
+                      <p className="text-center text-xs text-muted">Nessun logo</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="mb-3 text-sm leading-5 text-muted">Visibile nell'intestazione del menu pubblico.<br />Formati consigliati: PNG trasparente, SVG.</p>
+                    <label className="admin-secondary-button inline-flex cursor-pointer items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      Sostituisci logo
+                      <input type="file" accept="image/*" className="sr-only" onChange={handleLogoUpload} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* QR codes */}
+              <div className="grid gap-5 sm:grid-cols-2">
+                {([
+                  { id: 'menu', label: 'Menu', sublabel: 'Accesso pubblico al menu', link: menuLink, filename: 'qr-menu' },
+                  { id: 'admin', label: 'Area Admin', sublabel: 'Accesso area amministrativa', link: adminLink, filename: 'qr-admin' }
+                ] as const).map((item) => (
                   <div key={item.id} className="rounded-[1.35rem] border border-white/10 bg-taupe/70 p-3 sm:rounded-3xl sm:p-4">
-                    <div className="mb-4 flex items-center justify-between gap-4">
+                    <div className="mb-4 flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-xs font-semibold uppercase text-gold">QR</p>
-                        <h3 className="font-display text-2xl">{item.name}</h3>
+                        <p className="text-xs font-semibold uppercase text-gold">QR Code</p>
+                        <h3 className="font-display text-2xl">{item.label}</h3>
+                        <p className="mt-0.5 text-xs text-muted">{item.sublabel}</p>
                       </div>
                       <a
-                        href={link}
+                        href={item.link}
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded-full border border-white/10 bg-white/5 p-3 text-cream transition hover:bg-white/15"
-                        aria-label={txt(language, 'openMenu')}
+                        className="shrink-0 rounded-full border border-white/10 bg-white/5 p-3 text-cream transition hover:bg-white/15"
+                        aria-label="Apri link"
                       >
                         <ExternalLink className="h-5 w-5" />
                       </a>
                     </div>
-                    <QRCodeCanvas value={link} label={`QR ${item.name}`} />
-                    <div className="mt-4 rounded-2xl border border-white/10 bg-black/15 p-3">
-                      <p className="text-xs font-semibold uppercase text-gold">{txt(language, 'adminArea')}</p>
-                      <p className="mt-1 break-all text-xs leading-5 text-muted">{buildAdminLink(item.id)}</p>
+                    <QRCodeCanvas value={item.link} label={`QR ${item.label}`} />
+                    <p className="mt-2 break-all rounded-xl bg-black/15 px-3 py-2 text-[0.68rem] leading-4 text-muted">{item.link}</p>
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { void downloadQRPng(item.link, item.filename); }}
+                        className="admin-compact-button"
+                        title="Scarica PNG"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        PNG
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { void downloadQRSvg(item.link, item.filename); }}
+                        className="admin-compact-button"
+                        title="Scarica SVG"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        SVG
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => copyLink(item.link, item.id)}
+                        className={`admin-compact-button transition-colors ${copiedId === item.id ? 'border-green-500/40 bg-green-500/15 text-green-400' : ''}`}
+                        title="Copia link"
+                      >
+                        {copiedId === item.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                        {copiedId === item.id ? 'Copiato' : 'Copia'}
+                      </button>
                     </div>
                   </div>
-                );
-              })}
-            </section>
+                ))}
+              </div>
+            </div>
           ) : null}
         </main>
       </div>
