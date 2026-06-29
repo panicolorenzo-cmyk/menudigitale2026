@@ -5,7 +5,7 @@ import { DishCard } from './components/DishCard';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import locanda22IntroLogoSvg from './generated/locanda22IntroLogo.svg?raw';
 import { loadLocalMenu } from './lib/localMenu';
-import { getAdminSession, loadMenuSnapshot, saveMenuSnapshot, signInAdmin, signOutAdmin } from './lib/supabase';
+import { loadMenuSnapshot, saveMenuSnapshot, signInAdmin, signOutAdmin } from './lib/supabase';
 import { txt } from './lib/text';
 import { LANGUAGES, type Category, type Dish, type LanguageCode, type MenuState, type Restaurant, type RestaurantId, type ServiceType } from './types';
 
@@ -146,14 +146,7 @@ export default function App() {
     if (!adminMode || !restaurant || adminOpen || supabaseAuthOpen || !snapshotLoaded) {
       return;
     }
-
-    void getAdminSession().then((hasSession) => {
-      if (hasSession) {
-        setAdminOpen(true);
-      } else {
-        setSupabaseAuthOpen(true);
-      }
-    });
+    setSupabaseAuthOpen(true);
   }, [adminMode, adminOpen, supabaseAuthOpen, restaurant, snapshotLoaded]);
 
   const updateMenuState = (nextState: MenuState | ((currentState: MenuState) => MenuState)) => {
@@ -172,13 +165,7 @@ export default function App() {
   }, []);
 
   const requestAdmin = () => {
-    void getAdminSession().then((hasSession) => {
-      if (hasSession) {
-        setAdminOpen(true);
-      } else {
-        setSupabaseAuthOpen(true);
-      }
-    });
+    setSupabaseAuthOpen(true);
   };
 
   const handleSupabaseAuth = () => {
