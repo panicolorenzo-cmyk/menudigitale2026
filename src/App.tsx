@@ -316,7 +316,7 @@ function Landing({ restaurants, language, adminMode = false, skipIntro = false, 
   const [introReady, setIntroReady] = useState(() => adminMode || skipIntro);
   const [introEpoch, setIntroEpoch] = useState(0);
   const introReadyRef = useRef(introReady);
-  const introEnabled = !adminMode;
+  const introEnabled = !adminMode && !skipIntro;
   const sectionClass = adminMode ? 'justify-end' : 'justify-start';
   const headingWrapClass = adminMode
     ? 'max-w-3xl animate-fadeUp'
