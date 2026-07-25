@@ -1,13 +1,13 @@
 {
-  "name": "Menu Digitale 2026 - Locanda 22 e Adelardi",
-  "short_name": "Menu 2026",
-  "description": "Menu digitale premium, multilingua e installabile per Locanda 22 e Adelardi.",
+  "name": "La mia terapia",
+  "short_name": "Terapia",
+  "description": "Promemoria personale per farmaci, dosi e scorte.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#171410",
-  "theme_color": "#c5a46a",
+  "background_color": "#f6f8f7",
+  "theme_color": "#35765f",
   "icons": [
     {
       "src": "/icons/icon.svg",
