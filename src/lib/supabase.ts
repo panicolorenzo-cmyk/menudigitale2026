@@ -2,8 +2,8 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { MenuState } from '../types';
 import { isMenuState, loadLocalMenu, normalizeMenuState, saveLocalMenu } from './localMenu';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+const supabaseUrl = import.meta.env.VITE_MENU_SUPABASE_URL?.trim() || import.meta.env.VITE_SUPABASE_URL?.trim();
+const supabaseAnonKey = import.meta.env.VITE_MENU_SUPABASE_ANON_KEY?.trim() || import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
 const isConfiguredValue = (value: string | undefined) => Boolean(value && !value.startsWith('INSERIRE_'));
 
