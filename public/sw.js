@@ -1,11 +1,9 @@
-const CACHE_NAME = 'menu-digitale-2026-v2';
+const CACHE_NAME = 'menu-digitale-2026-v3';
 const APP_SHELL = [
   '/index.html',
   '/manifest.webmanifest',
-  '/icons/icon.svg',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg',
-  '/icons/maskable.svg'
+  '/icons/locanda22-home-192.png?v=3',
+  '/icons/locanda22-home-512.png?v=3'
 ];
 
 self.addEventListener('install', (event) => {
